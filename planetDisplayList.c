@@ -1,15 +1,15 @@
 #include "planetDisplayList.h"
 
-PlanetDisplayList *createDisplayListNode(planet_type newPlanet)
+PlanetDisplayList *createDisplayListNode(planet_type *newPlanet)
 {
-  PlanetDisplayList *newNode;
-  //TODO: malloc
+  //TODO: Stina hur initialisera GTK sakerna?
+  PlanetDisplayList *newNode = (PlanetDisplayList*)malloc(sizeof(PlanetDisplayList));
   newNode->label = NULL;
   newNode->check = NULL;
-  //TODO: add for one more variable
+  //TODO: add for one more variable?
   newNode->state = 0;
   newNode->checked = 0;
-  //TODO: copy planet
+  newNode->planet = newPlanet;
   newNode->next = NULL;
   return newNode;
 }

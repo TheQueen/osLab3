@@ -19,7 +19,7 @@ struct planetDisplayList
 };
 
 //Förslag på vad vi kanske behöver
-PlanetDisplayList *createDisplayListNode(planet_type newPlanet);
+PlanetDisplayList *createDisplayListNode(planet_type *newPlanet);
 PlanetDisplayList* addfirstToDisplayList(PlanetDisplayList *head, PlanetDisplayList *newPlanet);
 //init
 //remove

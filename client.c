@@ -57,7 +57,6 @@ GtkWidget * addRadiusInput;
 GtkWidget * addMassLabel;
 GtkWidget * addMassInput;
 GtkWidget * addFixed;
-GtkWidget * scrollWin;
 PangoTabArray * tab; //sak för att kunna tabba igenom alla knappar och inputrutor
 
 //////////////////////////////stuff//////////////////////////////////////////////
@@ -124,10 +123,7 @@ int main(int argc, char** argv)
 //skräp funktion
 void testFunc()
 {
-    GtkTextIter iter; 
-    gtk_text_buffer_get_iter_at_offset(msgBoxBuffer, &iter, 0);
-     gtk_text_buffer_insert(msgBoxBuffer, &iter, "Plain text\n", -1);
-    
+    printf ("haha");
 }
 
 void startObserver (GtkApplication * app, gpointer uData)
@@ -172,10 +168,7 @@ void startObserver (GtkApplication * app, gpointer uData)
 
     gtk_text_view_set_buffer(msgBox, msgBoxBuffer);
 
-    scrollWin = gtk_scrolled_window_new(NULL,NULL);
-    gtk_container_add(GTK_CONTAINER(scrollWin), msgBox);
-    
-    gtk_widget_set_size_request(scrollWin, 270, 250);
+    gtk_widget_set_size_request(msgBox, 270, 250);
     gtk_widget_set_size_request(planetList, 180, 400);
 
     //skapar alla statiska texter
@@ -202,7 +195,7 @@ void startObserver (GtkApplication * app, gpointer uData)
     g_signal_connect(loadButton, "clicked", G_CALLBACK(load), NULL);
     g_signal_connect(sendButton, "clicked", G_CALLBACK(sendOpen), NULL);
     g_signal_connect(saveButton, "clicked", G_CALLBACK(save), NULL);
-    g_signal_connect(addButton, "clicked", G_CALLBACK(testFunc), NULL); //startAddWindow
+    g_signal_connect(addButton, "clicked", G_CALLBACK(startAddWindow), NULL);
 
     //lägger in fixed i window
     gtk_container_add(GTK_CONTAINER(window), fixed);
@@ -218,7 +211,7 @@ void startObserver (GtkApplication * app, gpointer uData)
     gtk_fixed_put(GTK_FIXED(fixed), loadLabel, 250, 320);
     gtk_fixed_put(GTK_FIXED(fixed), saveLabel, 250, 380);
     gtk_fixed_put(GTK_FIXED(fixed), lPlanetNum, 40, 455);
-    gtk_fixed_put(GTK_FIXED(fixed), scrollWin, 200, 10);
+    gtk_fixed_put(GTK_FIXED(fixed), msgBox, 200, 10);
 
     //set tab
     gtk_entry_set_tabs(loadName, tab);
@@ -336,23 +329,39 @@ void printMsg(char *msg)
 }
 void load ()
 {
-    planet_type temp;
+    planet_type *temp;
     gchar * filename = gtk_entry_get_text (loadName);
     printf ("%s\n", filename);
+    strcat(filename, ".bin");
 
     FILE *fp;
     fp = fopen(filename, "rb");
 
-
-    //TODO: Mutex stuff
-    //TODO: load planets from from file and add planets to list one by one, use createDisplayListNode() and addToDisplayList()
-
-
-    if((fclose(fp )) != 0)
+    if(fp == NULL)
     {
-        printf("Error: couldn´t close file correctly\n");
-        exit(EXIT_FAILURE);
+      //TODO: put message in messagebox
+      printf("File could not be opened\n");
+      return;
     }
+
+    while(1)
+    {
+      temp = (planet_type*)malloc(sizeof(planet_type));
+      if(fread(temp, sizeof(planet_type), 1, fp))
+      {
+        printf ("%s\n", temp->name);
+        //TODO: Mutex stuff
+        displayListHead = addfirstToDisplayList(displayListHead, temp);
+      }
+      else
+      {
+        free(temp);
+        break;
+      }
+    }
+
+
+    fclose(fp);
 }
 void save()
 {
@@ -365,6 +374,13 @@ void save()
     FILE *fp;
     fp = fopen(filename, "wb");
 
+    if(fp == NULL)
+    {
+      //TODO: put message in messagebox
+      printf("File could not be opened\n");
+      return;
+    }
+
     //Make new pointer to use for saving and set it to first planet in the list
     PlanetDisplayList *temp = NULL;
     temp = displayListHead;
@@ -372,25 +388,21 @@ void save()
     //I just save the planets so that when I load, I don´t get a checked box on every loaded planet
     while(temp != NULL)
     {
-        if (temp->checked)
+        if (/*temp->checked*/1)
         {
            fwrite(temp->planet, sizeof(planet_type), 1, fp);
         }
         temp = temp->next;
     }
-    if((fclose(fp )) != 0)
-    {
-        printf("Error: couldn´t close file correctly\n");
-        exit(EXIT_FAILURE);
-    }
+    fclose(fp);
 }
-//TODO: Kolla: behöver vi denna funktion? Är inte den någon annan som redan finns?
+//TODO: Stina Kolla: behöver vi denna funktion? Är inte den någon annan som redan finns?
 void addObsever()
 {
     //öppna add-fonster
     //return 404
 }
-//TODO: Kolla: Vad är detta för funktion? Jag fattar inte... är det inte samma fråga som på funktionen ovan?
+//TODO: Stina Kolla: Vad är detta för funktion? Jag fattar inte... är det inte samma fråga som på funktionen ovan?
 void sendOpen()
 {
     //create thread send planet
@@ -419,17 +431,18 @@ void add()
     printf ("%s\n", returnName);
     //TODO: set these with correctly casted values so that new planet can be created
     //Haven´t checked if this code works
-    // double xposp = atof(xpos);
-    // double yposp = atof(ypos);
-    // double xVp = atof(movx);
-    // double yVp = atof(movy);
-    // double massp = atof(mass);
-    // int lifep = atoi(life);
-    // int rp = atoi(radius);
-
-    //planet_type newPlanet = createPlanet(name, xposp, yposp, xVp, yVp, massp, lifep, returnName, rp);
+    double xposp = atof(xpos);
+    double yposp = atof(ypos);
+    double xVp = atof(movx);
+    double yVp = atof(movy);
+    double massp = atof(mass);
+    int lifep = atoi(life);
+    int rp = atoi(radius);
+    planet_type* newPlanet = (planet_type*)malloc(sizeof(planet_type));
+    *newPlanet = createPlanet(name, xposp, yposp, xVp, yVp, massp, lifep, returnName, rp);
+    PlanetDisplayList *temp = createDisplayListNode(newPlanet);
     //TODO: mutex stuff
-    //displayListHead = addfirstToDisplayList(displayListHead, newPlanet);
+    displayListHead = addfirstToDisplayList(displayListHead, temp);
     //TODO: Stina? uppdateGraphical interface
 }
 

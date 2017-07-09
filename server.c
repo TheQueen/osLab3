@@ -23,28 +23,14 @@ double x2 = 5.0;
 #define FNAME "/mapVars"
 #define PLANETDEAD "/Deeeeead"
 mqd_t mq;
-pthread_condattr_t attrcond;
-pthread_mutexattr_t attrmutex;
-int mode = S_IRWXU | S_IRWXG | S_IRWXO;
 
 ListHead * head;
 int id = 1;
 
-typedef struct mutexConds
-{
-    pthread_mutex_t mutex;
-    pthread_cond_t aliveCond;
-    pthread_cond_t deadCond;
-    int test;
-} MyStruct;
-
-MyStruct * myStruct;
-MyStruct * myStruct2;
-
-pthread_mutex_t addOrRemove; 
+pthread_mutex_t addOrRemove;
 
 int calc(planet_type * planet) {
-    //truct timespec t = {.tv_sec = 0, .tv_nsec = 900000}; 
+    //truct timespec t = {.tv_sec = 0, .tv_nsec = 900000};
     Node *ptr = head->head;
     double G = 6.67259 * pow(10, -11);
     double dt = 10.0;
@@ -61,10 +47,10 @@ int calc(planet_type * planet) {
 
     do {
         //printf("%s / %s \n", ptr->planet->name, planet->name);
-        if (!strncmp(ptr->planet->name, planet->name, strlen(planet->name))) 
+        if (!strncmp(ptr->planet->name, planet->name, strlen(planet->name)))
         {
 
-        } 
+        }
         else {
             double x = ptr->planet->sx - planet->sx;
           //  printf("x: %f \n", x);
@@ -120,14 +106,14 @@ int calc(planet_type * planet) {
 void * handlePlanet(void * arg)
 {
     planet_type * planet = (planet_type *) arg;
-    
+
     while(planet->life > 0)
     {
         calc(planet);
         usleep(1000);
-        
+
     }
-    
+
     mqd_t tempmq;
     if (MQconnect(&tempmq, PLANETDEAD) == 0)
     {
@@ -136,9 +122,9 @@ void * handlePlanet(void * arg)
     if(MQwrite(&tempmq, planet) != 0)
     {
         printf("could not write to client when dead\n");
-    } 
-    
-    
+    }
+
+
     while (1)
     {
         if (pthread_mutex_trylock(&addOrRemove))
@@ -146,51 +132,51 @@ void * handlePlanet(void * arg)
             int back = deleteNode (head, planet->name);
             printf("back: %d", back);
             pthread_mutex_unlock(&addOrRemove);
-            break; 
-        }   
-    }   
-        
-    
-    
+            break;
+        }
+    }
+
+
+
     pthread_exit(NULL);
 }
 
 void * getPlanets(void * arg)
-{   
+{
     printf("getPlanets\n");
-    fflush(stdout); 
+    fflush(stdout);
     planet_type * tempP;
-    
-    
+
+
     int bytes_read;
-    
-    if (!MQcreate(&mq, PLANETIPC)) 
+
+    if (!MQcreate(&mq, PLANETIPC))
     {
         printf("Failed to create server!\n");
         return NULL;
     }
-    
+
     printf("created server!\n");
-    fflush(stdout); 
-    
+    fflush(stdout);
+
     while(1)
     {
         printf("while\n");
-        fflush(stdout); 
+        fflush(stdout);
         tempP = (planet_type *) malloc(sizeof(planet_type ));
-        printf("kolla tempP\nsize planet_type = %d\nsize thempP = %d\n", sizeof(planet_type)), sizeof(*tempP);
+        //printf("kolla tempP\nsize planet_type = %d\nsize thempP = %d\n", sizeof(planet_type)), sizeof(*tempP);
         fflush(stdout);
         if(tempP == NULL)
         {
             printf("tempP == NULL\n");
             fflush(stdout);
-            exit(EXIT_FAILURE); 
+            exit(EXIT_FAILURE);
         }
-        
+
         bytes_read = MQread(&mq, tempP);
         printf("MQread\n");
-        fflush(stdout); 
-        
+        fflush(stdout);
+
         if(bytes_read == -1)
         {
             printf("Error MQread: %s\n", strerror(errno));
@@ -198,17 +184,17 @@ void * getPlanets(void * arg)
         }
         else
         {
-            
+
             pthread_mutex_lock(&addOrRemove);
             Node * p = addNode(head, *tempP);
-            pthread_mutex_unlock(&addOrRemove); 
+            pthread_mutex_unlock(&addOrRemove);
             printf("Planet %d: %s\n", id, tempP->name);
             //tempP.pid = id;//ehhhhhhh ska vi göra såhär? hur vet clienten vilka planeter den ska få tillbaka?
             threadCreate(handlePlanet, id, p->planet);
-            id++;     
+            id++;
         }
-        free(tempP); 
-    }   
+        free(tempP);
+    }
 }
 
 static gboolean on_draw_event(GtkWidget *widget, cairo_t *cr, gpointer user_data) {
@@ -230,7 +216,7 @@ static void do_drawing(cairo_t *cr) //Do the drawing against the cairo surface a
 
 }
 
-GtkTickCallback on_frame_tick(GtkWidget * widget, GdkFrameClock * frame_clock, gpointer user_data) //Tick handler to update the frame
+void on_frame_tick(GtkWidget * widget, GdkFrameClock * frame_clock, gpointer user_data) //Tick handler to update the frame
 {
     gdk_frame_clock_begin_updating(frame_clock); //Update the frame clock
     gtk_widget_queue_draw(darea); //Queue a draw event
@@ -261,7 +247,7 @@ int main(int argc, char *argv[]) //Main function
     addNode(head, &p4);
     addNode(head, &p5);
     */
-    
+
     //GUI stuff, don't touch unless you know what you are doing, or if you talked to me
     gtk_init(&argc, &argv); //Initialize GTK environment
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL); //Create a new window which will serve as your top layer
@@ -276,28 +262,26 @@ int main(int argc, char *argv[]) //Main function
     gtk_window_set_default_size(GTK_WINDOW(window), 800, 600); //Set size of window
     gtk_window_set_title(GTK_WINDOW(window), "GTK window"); //Title
     gtk_widget_show_all(window); //Show window
-    gtk_widget_add_tick_callback(darea, on_frame_tick, NULL, 1); //Add timer callback functionality for darea
+    gtk_widget_add_tick_callback(darea, (GtkTickCallback)on_frame_tick, NULL, (GDestroyNotify)1); //Add timer callback functionality for darea
     //GUI stuff, don't touch unless you know what you are doing, or if you talked to me
 
     /*
     Node * ptr = head->head;
     int id = 1;
-    while (ptr != NULL) 
+    while (ptr != NULL)
     {
         threadCreate(threadTestFunc, id, ptr);
         ptr = ptr->next;
         id++;
     }
     */
-    
+
     threadCreate(getPlanets, 0, NULL);
    // pthread_exit(NULL);
     //planet_type p1 = createPlanet("p1", 300.0, 300.0, 0.0, 0.0, 10000000.0, 300000000, 1, 5);
-    //handlePlanet(&p1);    
+    //handlePlanet(&p1);
 
     gtk_main(); //Call gtk_main which handles basic GUI functionality
     pthread_exit(NULL);
     return 0;
 }
-
-

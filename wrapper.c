@@ -35,7 +35,7 @@ int MQcreate (mqd_t * mq, char * name)
     else
     {
         printf("MQcreate succses\n");
-        fflush(stdout); 
+        fflush(stdout);
         return 1;
     }
 }
@@ -55,9 +55,9 @@ int MQconnect (mqd_t * mq, char * name)
 //returns: bytes read or -1
 int MQread (mqd_t * mq, void * refBuffer)
 {
-    printf("inMQread\n size = %d\n", sizeof(*refBuffer));
-    fflush(stdout); 
-    
+    printf("inMQread\n size = %lu\n", sizeof(*refBuffer));
+    fflush(stdout);
+
     return mq_receive(*mq, refBuffer, 101, NULL);
 }
 //returns: 0 if ok and -1 if not ok

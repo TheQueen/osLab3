@@ -143,7 +143,7 @@ void startObserver (GtkApplication * app, gpointer uData)
     //när den funkar
     gboolean a = TRUE;
     planetList = gtk_tree_view_new(); // behöver fixas till
-    gtk_tree_view_set_headers_visible(planetList, a);
+    gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(planetList), a);
 
 
     //samma med denna
@@ -156,9 +156,9 @@ void startObserver (GtkApplication * app, gpointer uData)
     GtkTreeViewColumn * localColumn = gtk_tree_view_column_new();
     gtk_tree_view_column_set_title(localColumn, "Local");
 
-    gtk_tree_view_append_column(planetList, checkColumn);
-    gtk_tree_view_append_column(planetList, planetsColumn);
-    gtk_tree_view_append_column(planetList, localColumn);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(planetList), checkColumn);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(planetList), planetsColumn);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(planetList), localColumn);
 
     //och denna//
     msgBoxBuffer = gtk_text_buffer_new(NULL);
@@ -166,7 +166,7 @@ void startObserver (GtkApplication * app, gpointer uData)
     //denna oxå
     msgBox = gtk_text_view_new();
 
-    gtk_text_view_set_buffer(msgBox, msgBoxBuffer);
+    gtk_text_view_set_buffer(GTK_TEXT_VIEW(msgBox), msgBoxBuffer);
 
     gtk_widget_set_size_request(msgBox, 270, 250);
     gtk_widget_set_size_request(planetList, 180, 400);
@@ -181,8 +181,8 @@ void startObserver (GtkApplication * app, gpointer uData)
     saveName = gtk_entry_new();
 
     //sätter den temporära texten i textfälten
-    gtk_entry_set_text(loadName, "Enter filename");
-    gtk_entry_set_text(saveName, "Enter filename");
+    gtk_entry_set_text(GTK_ENTRY(loadName), "Enter filename");
+    gtk_entry_set_text(GTK_ENTRY(saveName), "Enter filename");
 
     //skapar alla knapparna och sätter en text på dem
     loadButton = gtk_button_new_with_label("load");
@@ -214,8 +214,8 @@ void startObserver (GtkApplication * app, gpointer uData)
     gtk_fixed_put(GTK_FIXED(fixed), msgBox, 200, 10);
 
     //set tab
-    gtk_entry_set_tabs(loadName, tab);
-    gtk_entry_set_tabs(saveName, tab);
+    gtk_entry_set_tabs(GTK_ENTRY(loadName), tab);
+    gtk_entry_set_tabs(GTK_ENTRY(saveName), tab);
 
 
     //gör alla widgetar som finns i window synliga
@@ -256,14 +256,14 @@ void startAddWindow(GtkApplication * app, gpointer uData)
     addNameInput = gtk_entry_new();
     gtk_fixed_put(GTK_FIXED (addFixed), addNameLabel, 20, 20);
     gtk_fixed_put(GTK_FIXED (addFixed), addNameInput, 20, 40);
-    gtk_entry_set_tabs(addNameInput, tab);
+    gtk_entry_set_tabs(GTK_ENTRY(addNameInput), tab);
 
     //StartPos section
     addStartPosLabel = gtk_label_new("Start position: ");
     addStartX = gtk_entry_new();
-    gtk_entry_set_text(addStartX, "X-pos");
+    gtk_entry_set_text(GTK_ENTRY(addStartX), "X-pos");
     addStartY = gtk_entry_new();
-    gtk_entry_set_text(addStartY, "Y-pos");
+    gtk_entry_set_text(GTK_ENTRY(addStartY), "Y-pos");
     gtk_fixed_put(GTK_FIXED (addFixed), addStartPosLabel, 20, 80);
     gtk_fixed_put(GTK_FIXED (addFixed), addStartX, 20, 100);
     gtk_fixed_put(GTK_FIXED (addFixed), addStartY, 20, 130);
@@ -271,9 +271,9 @@ void startAddWindow(GtkApplication * app, gpointer uData)
     //Movment section
     addMovementLabel = gtk_label_new("Movement: ");
     addMovementX = gtk_entry_new();
-    gtk_entry_set_text(addMovementX, "X-pos");
+    gtk_entry_set_text(GTK_ENTRY(addMovementX), "X-pos");
     addMovementY = gtk_entry_new();
-    gtk_entry_set_text(addMovementY, "Y-pos");
+    gtk_entry_set_text(GTK_ENTRY(addMovementY), "Y-pos");
     gtk_fixed_put(GTK_FIXED (addFixed), addMovementLabel, 20, 170);
     gtk_fixed_put(GTK_FIXED (addFixed), addMovementX, 20, 190);
     gtk_fixed_put(GTK_FIXED (addFixed), addMovementY, 20, 220);
@@ -329,10 +329,10 @@ void printMsg(char *msg)
 }
 void load ()
 {
-    planet_type *temp;
-    gchar * filename = gtk_entry_get_text (loadName);
+    planet_type *temp = NULL;
+    PlanetDisplayList *tempDisp = NULL;
+    const gchar * filename = gtk_entry_get_text (GTK_ENTRY(loadName));
     printf ("%s\n", filename);
-    strcat(filename, ".bin");
 
     FILE *fp;
     fp = fopen(filename, "rb");
@@ -350,8 +350,9 @@ void load ()
       if(fread(temp, sizeof(planet_type), 1, fp))
       {
         printf ("%s\n", temp->name);
+        tempDisp = createDisplayListNode(temp);
         //TODO: Mutex stuff
-        displayListHead = addfirstToDisplayList(displayListHead, temp);
+        displayListHead = addfirstToDisplayList(displayListHead, tempDisp);
       }
       else
       {
@@ -366,10 +367,8 @@ void load ()
 void save()
 {
     //TODO: mutex stuff
-    gchar * filename = gtk_entry_get_text (saveName);
+    const gchar * filename = gtk_entry_get_text (GTK_ENTRY(saveName));
     printf ("%s\n", filename);
-
-    strcat(filename, ".bin");
 
     FILE *fp;
     fp = fopen(filename, "wb");
@@ -419,18 +418,21 @@ void add()
     //add planet to list?
     //add to displaylist
 
-    gchar * name = gtk_entry_get_text (addNameInput);
-    gchar * xpos = gtk_entry_get_text (addStartX);
-    gchar * ypos = gtk_entry_get_text (addStartY);
-    gchar * movx = gtk_entry_get_text (addMovementX);
-    gchar * movy = gtk_entry_get_text (addMovementY);
-    gchar * life = gtk_entry_get_text (addLifeInput);
-    gchar * radius = gtk_entry_get_text (addRadiusInput);
-    gchar * mass = gtk_entry_get_text (addMassInput);
+    const gchar * name = gtk_entry_get_text (GTK_ENTRY(addNameInput));
+    const gchar * xpos = gtk_entry_get_text (GTK_ENTRY(addStartX));
+    const gchar * ypos = gtk_entry_get_text (GTK_ENTRY(addStartY));
+    const gchar * movx = gtk_entry_get_text (GTK_ENTRY(addMovementX));
+    const gchar * movy = gtk_entry_get_text (GTK_ENTRY(addMovementY));
+    const gchar * life = gtk_entry_get_text (GTK_ENTRY(addLifeInput));
+    const gchar * radius = gtk_entry_get_text (GTK_ENTRY(addRadiusInput));
+    const gchar * mass = gtk_entry_get_text (GTK_ENTRY(addMassInput));
+
 
     printf ("%s\n", returnName);
     //TODO: set these with correctly casted values so that new planet can be created
     //Haven´t checked if this code works
+    char * namep = NULL;
+    strcpy(namep, name);
     double xposp = atof(xpos);
     double yposp = atof(ypos);
     double xVp = atof(movx);
@@ -438,8 +440,10 @@ void add()
     double massp = atof(mass);
     int lifep = atoi(life);
     int rp = atoi(radius);
+
     planet_type* newPlanet = (planet_type*)malloc(sizeof(planet_type));
-    *newPlanet = createPlanet(name, xposp, yposp, xVp, yVp, massp, lifep, returnName, rp);
+    *newPlanet = createPlanet(namep, xposp, yposp, xVp, yVp, massp, lifep, returnName, rp);
+
     PlanetDisplayList *temp = createDisplayListNode(newPlanet);
     //TODO: mutex stuff
     displayListHead = addfirstToDisplayList(displayListHead, temp);

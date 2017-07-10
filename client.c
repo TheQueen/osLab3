@@ -13,7 +13,7 @@
 #include "list.h"
 #include "planetDisplayList.h"
 
-#define PLANETIPC "/PlanetLabz"
+#define PLANETIPC "/PlanetLaba"
 #define PLANETDEAD "/Deeeeead" //TODO: Fix this to be unique(also in server) -- Jag tror jag kommer ihåg att jakob sa att vi behövde fixa det till nästa lab
 
 char * returnName;
@@ -90,34 +90,58 @@ void * readDead(void * arg);
 //////////////////////////////////////////////////////////////////
 int main(int argc, char** argv)
 {
-    pthread_t reader = 0;
-    displayListHead = NULL;
-    int status;
+  pthread_t reader = 0;
+  pthread_t writer = 0;
+  pid_t pid;
+  pid = getpid();
+  char mqReturnName[30];
+  mqReturnName[0] = '/';
+  char car[20];
+  snprintf(car, 10, "%d", pid);
+  printf("%d = %s\n", (int)pid, mqReturnName);
+  strcat(mqReturnName, car);
 
-    pid_t pid;
-    pid = getpid();
-    char mqReturnName[30];
-    mqReturnName[0] = '/';
-    char car[20];
-    snprintf(car, 10, "%d", pid);
-    strcat(mqReturnName, car);
-    returnName = mqReturnName;
-    testSendPlanet();
-    //printf("%d = %s\n", (int)pid, mqReturnName);
 
-    //initTab
-    tab = pango_tab_array_new(30, TRUE);
+  if (MQconnect(&serverHandle, PLANETIPC) == 0)
+  {
+      printf("Failed to connect to server!\n");
+      return (EXIT_SUCCESS);
+  }
+  printf("mq connected\n");
 
-    threadCreate(readDead, reader, mqReturnName);
+  threadCreate(sendPlanet, writer, mqReturnName);
+  threadCreate(readDead, reader, mqReturnName);
+  pthread_exit(NULL);
 
-    //skapar appliacationen
-    app = gtk_application_new("org.gtk.example", G_APPLICATION_FLAGS_NONE);
-    g_signal_connect(app, "activate", G_CALLBACK(startObserver), NULL);
-    status = g_application_run(G_APPLICATION (app), argc, argv);
-    g_object_unref (app);
-
-    //return (EXIT_SUCCESS);
-    return status;
+  return (EXIT_SUCCESS);
+    // pthread_t reader = 0;
+    // displayListHead = NULL;
+    // int status;
+    //
+    // pid_t pid;
+    // pid = getpid();
+    // char mqReturnName[30];
+    // mqReturnName[0] = '/';
+    // char car[20];
+    // snprintf(car, 10, "%d", pid);
+    // strcat(mqReturnName, car);
+    // returnName = mqReturnName;
+    // testSendPlanet();
+    // //printf("%d = %s\n", (int)pid, mqReturnName);
+    //
+    // //initTab
+    // tab = pango_tab_array_new(30, TRUE);
+    //
+    // threadCreate(readDead, reader, mqReturnName);
+    //
+    // //skapar appliacationen
+    // app = gtk_application_new("org.gtk.example", G_APPLICATION_FLAGS_NONE);
+    // g_signal_connect(app, "activate", G_CALLBACK(startObserver), NULL);
+    // status = g_application_run(G_APPLICATION (app), argc, argv);
+    // g_object_unref (app);
+    //
+    // //return (EXIT_SUCCESS);
+    // return status;
 }
 
 //skräp funktion
@@ -304,7 +328,6 @@ void startAddWindow(GtkApplication * app, gpointer uData)
 
     gtk_widget_show_all(addWindow);
 }
-
 
 //Observer funcs
 void onCheck()
@@ -527,79 +550,50 @@ void updateList()
 {
 }
 
-
-
-void testSendPlanet()
-{
-    planet_type planet[6];
-    planet[0] = createPlanet("p1", 300.0, 300.0, 0.0, 0.0, 10000000.0, 300000000, "/1234", 5);
-    planet[1] = createPlanet("p2", 200.0, 300.0, 0.0, 0.0008, 1000.0, 100000000, "/1234", 5 );
-    planet[2] = createPlanet("p3", 400.0, 300.0, 0.0, -0.0008, 1000.0, 1000000, "/1234", 5);
-    planet[3] = createPlanet("p4", 300.0, 200.0, -0.0008, 0.0, 1000.0, 1000, "/1234", 5);
-    planet[4] = createPlanet("p5", 300.0, 400.0, 0.0008, 0.0, 1000.0, 1000000, "/1234", 5);
-    planet[5] = createPlanet("p6", 300.0, 400.0, 0.9, 0.0, 1000.0, 1000000, "/1234", 5);
-
-    int check = 0;
-
-    for(int i=0; i<6; i++)
-    {
-
-        check = MQwrite(&serverHandle, &planet[i]);
-        printf("written to mq\n");
-
-        if(check != 0)
-        {
-            printf("could not write to mailbox\n");
-            break;
-        }
-    }
-    return;
-
-}
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Lab2
 void * sendPlanet(void * arg)
 {
-    planet_type planet[6];
+    planet_type planet[5];
+    //planet[0] = createPlanet("p1", 300.0, 300.0, 0.0, 0.0, 10000000.0, 300000000, 1, 5);
+    //planet[1] = createPlanet("p2", 200.0, 300.0, 0.0, 0.0008, 1000.0, 100000000, 2, 5 );
     planet[0] = createPlanet("p1", 300.0, 300.0, 0.0, 0.0, 10000000.0, 300000000, arg, 5);
-    planet[1] = createPlanet("p2", 200.0, 300.0, 0.0, 0.0008, 1000.0, 100000000, arg, 5 );
+    planet[1] = createPlanet("p2", 200.0, 300.0, 0.0, 0.0008, 1000.0, 100000000, arg, 5);
     planet[2] = createPlanet("p3", 400.0, 300.0, 0.0, -0.0008, 1000.0, 1000000, arg, 5);
     planet[3] = createPlanet("p4", 300.0, 200.0, -0.0008, 0.0, 1000.0, 1000, arg, 5);
     planet[4] = createPlanet("p5", 300.0, 400.0, 0.0008, 0.0, 1000.0, 1000000, arg, 5);
-    planet[5] = createPlanet("p6", 300.0, 400.0, 0.9, 0.0, 1000.0, 1000000, arg, 5);
-
     int check = 0;
 
-    for(int i=0; i<6; i++)
+    sleep(2);
+
+    for(int i=0; i<5; i++)
     {
-
         check = MQwrite(&serverHandle, &planet[i]);
-        printf("written to mq\n");
-
         if(check != 0)
         {
             printf("could not write to mailbox\n");
             break;
         }
     }
+    printf("planets sent\n");
     return NULL;
-
 }
 
 void * readDead(void * arg)
 {
+    mqd_t mq;
     int count = 0;
     planet_type tempP;
     int bytes_read;
-    //pthread_t block;
-    if (!MQcreate(&mq, PLANETDEAD))
+
+    if (!MQcreate(&mq, arg))
     {
         printf("Failed to create server!\n");
         return NULL;
     }
+    printf("created readDead!\n");
 
-    while(1)
+    while(count < 5)
     {
         bytes_read = MQread(&mq, &tempP);
         if(bytes_read != -1)
@@ -611,18 +605,9 @@ void * readDead(void * arg)
                 default: printf("Eeeeeeehhhhrror\n"); break;
             }
             count++;
-            sleep(20);
-            //pthread_create(&block, NULL, readDead/*Felfunktion*/, NULL);
-
         }
-        if(count == 5)
-        {
-            printf("I should break");
-        }
-
-
     }
-    if(MQclose(&mq, PLANETDEAD) == 1)
+    if(MQclose(&mq, arg) == 1)
     {
         printf("mailbox was successfully closed\n");
     }
@@ -630,26 +615,70 @@ void * readDead(void * arg)
 }
 
 
-    //pthread_t reader, writer;
 
-    /*int i;
-    pid_t pid;
-    pid = getpid();
-    char mqReturnName[30];
-    mqReturnName[0] = '/';
-    char car[20];
-    snprintf(car, 10, "%d", pid);
-    strcat(mqReturnName, car);
+// void * readDead(void * arg)
+// {
+//     int count = 0;
+//     planet_type tempP;
+//     int bytes_read;
+//     //pthread_t block;
+//     if (!MQcreate(&mq, PLANETDEAD))
+//     {
+//         printf("Failed to create server!\n");
+//         return NULL;
+//     }
+//
+//     while(1)
+//     {
+//         bytes_read = MQread(&mq, &tempP);
+//         if(bytes_read != -1)
+//         {
+//             switch(tempP.life)
+//             {
+//                 case  0: printf("Planet %s died of old age\n", tempP.name); break;
+//                 case -1: printf("Planet %s disappeared\n", tempP.name); break;
+//                 default: printf("Eeeeeeehhhhrror\n"); break;
+//             }
+//             count++;
+//             sleep(20);
+//             //pthread_create(&block, NULL, readDead/*Felfunktion*/, NULL);
+//
+//         }
+//         if(count == 5)
+//         {
+//             printf("I should break");
+//         }
+//
+//
+//     }
+//     if(MQclose(&mq, PLANETDEAD) == 1)
+//     {
+//         printf("mailbox was successfully closed\n");
+//     }
+//     return NULL;
+// }
 
-    //printf("%d = %s\n", (int)pid, mqReturnName);
 
-    if (MQconnect(&serverHandle, PLANETIPC) == 0)
-    {
-            printf("Failed to connect to server!\n");
-            return (EXIT_SUCCESS);
-    }
-    */
-    //printf("created server!\n");
-    //threadCreate(sendPlanet, writer, mqReturnName);
-    //threadCreate(readDead, reader, mqReturnName);
-    //pthread_exit(NULL);
+// pthread_t reader, writer;
+// pid_t pid;
+// pid = getpid();
+// char mqReturnName[30];
+// mqReturnName[0] = '/';
+// char car[20];
+// snprintf(car, 10, "%d", pid);
+// printf("%d = %s\n", (int)pid, mqReturnName);
+// strcat(mqReturnName, car);
+//
+//
+// if (MQconnect(&serverHandle, PLANETIPC) == 0)
+// {
+//     printf("Failed to connect to server!\n");
+//     return (EXIT_SUCCESS);
+// }
+// printf("mq connected\n");
+//
+// threadCreate(sendPlanet, writer, mqReturnName);
+// threadCreate(readDead, reader, mqReturnName);
+// pthread_exit(NULL);
+//
+// return (EXIT_SUCCESS);

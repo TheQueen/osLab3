@@ -13,7 +13,7 @@
 #include "list.h"
 #include "planetDisplayList.h"
 
-#define PLANETIPC "/PlanetLaba"
+#define PLANETIPC "/PlanetLab"
 #define PLANETDEAD "/Deeeeead" //TODO: Fix this to be unique(also in server) -- Jag tror jag kommer ihåg att jakob sa att vi behövde fixa det till nästa lab
 
 char * returnName;
@@ -57,6 +57,13 @@ GtkWidget * addRadiusInput;
 GtkWidget * addMassLabel;
 GtkWidget * addMassInput;
 GtkWidget * addFixed;
+GtkWidget * scrollWin;
+GtkWidget * scrollWinForPlanetList;
+
+GtkWidget * tempWidg;
+GtkWidget * tempWidgTwo; 
+
+
 PangoTabArray * tab; //sak för att kunna tabba igenom alla knappar och inputrutor
 
 //////////////////////////////stuff//////////////////////////////////////////////
@@ -83,6 +90,7 @@ void add();
 void sendPlan();
 void readDeadPlan();
 void updateList();      //Vill vi ha denna funktion?
+
 ////////////Lab2//////////////////////////////////////////////////
 void * sendPlanet(void * arg);
 void * readDead(void * arg);
@@ -101,6 +109,7 @@ int main(int argc, char** argv)
     snprintf(car, 10, "%d", pid);
     strcat(mqReturnName, car);
     returnName = mqReturnName;
+
     //printf("%d = %s\n", (int)pid, mqReturnName);
 
     //initTab
@@ -121,7 +130,10 @@ int main(int argc, char** argv)
 //skräp funktion
 void testFunc()
 {
-    printf ("haha");
+    GtkTextIter iter; 
+    gtk_text_buffer_get_iter_at_offset(msgBoxBuffer, &iter, 0);
+     gtk_text_buffer_insert(msgBoxBuffer, &iter, "Plain text\n", -1);
+    
 }
 
 void startObserver (GtkApplication * app, gpointer uData)
@@ -139,9 +151,11 @@ void startObserver (GtkApplication * app, gpointer uData)
 
     //denna kod är inte klar har inte fått den att funka än  så återkommer
     //när den funkar
-    gboolean a = TRUE;
+    /*gboolean a = TRUE;
     planetList = gtk_tree_view_new(); // behöver fixas till
-    gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(planetList), a);
+    scrollWinForPlanetList = gtk_scrolled_window_new(NULL,NULL);
+    gtk_container_add(GTK_CONTAINER(scrollWinForPlanetList), planetList);
+    gtk_tree_view_set_headers_visible(planetList, a);
 
 
     //samma med denna
@@ -154,20 +168,34 @@ void startObserver (GtkApplication * app, gpointer uData)
     GtkTreeViewColumn * localColumn = gtk_tree_view_column_new();
     gtk_tree_view_column_set_title(localColumn, "Local");
 
-    gtk_tree_view_append_column(GTK_TREE_VIEW(planetList), checkColumn);
-    gtk_tree_view_append_column(GTK_TREE_VIEW(planetList), planetsColumn);
-    gtk_tree_view_append_column(GTK_TREE_VIEW(planetList), localColumn);
-
-    //och denna//
+    gtk_tree_view_append_column(planetList, checkColumn);
+    gtk_tree_view_append_column(planetList, planetsColumn);
+    gtk_tree_view_append_column(planetList, localColumn);
+*/
+    
+    ///////////////////////////////////////PlanetList//////////////////////////////////////////////
+    
+    scrollWinForPlanetList = gtk_scrolled_window_new(NULL,NULL);
+    planetList = gtk_list_box_new();
+    gtk_container_add(GTK_CONTAINER(scrollWinForPlanetList), planetList);
+    tempWidg = gtk_label_new("Trying stuff");
+    tempWidgTwo = gtk_check_button_new_with_label("trying stuffffff");
+    //gtk_list_box_insert(planetList, tempWidg, -1); 
+    gtk_list_box_insert(planetList, tempWidgTwo, -1);
+    
+    ////////////////////////////////////////////MsgBox////////////////////////////////////////////
     msgBoxBuffer = gtk_text_buffer_new(NULL);
     gtk_text_buffer_set_text(msgBoxBuffer, "hello", 5);
-    //denna oxå
+    //denna funkar nu
     msgBox = gtk_text_view_new();
 
-    gtk_text_view_set_buffer(GTK_TEXT_VIEW(msgBox), msgBoxBuffer);
+    gtk_text_view_set_buffer(msgBox, msgBoxBuffer);
 
-    gtk_widget_set_size_request(msgBox, 270, 250);
-    gtk_widget_set_size_request(planetList, 180, 400);
+    scrollWin = gtk_scrolled_window_new(NULL,NULL);
+    gtk_container_add(GTK_CONTAINER(scrollWin), msgBox);
+    
+    gtk_widget_set_size_request(scrollWin, 270, 250);
+    gtk_widget_set_size_request(scrollWinForPlanetList, 180, 400);
 
     //skapar alla statiska texter
     loadLabel = gtk_label_new("Load planets");
@@ -179,8 +207,8 @@ void startObserver (GtkApplication * app, gpointer uData)
     saveName = gtk_entry_new();
 
     //sätter den temporära texten i textfälten
-    gtk_entry_set_text(GTK_ENTRY(loadName), "Enter filename");
-    gtk_entry_set_text(GTK_ENTRY(saveName), "Enter filename");
+    gtk_entry_set_text(loadName, "Enter filename");
+    gtk_entry_set_text(saveName, "Enter filename");
 
     //skapar alla knapparna och sätter en text på dem
     loadButton = gtk_button_new_with_label("load");
@@ -193,7 +221,7 @@ void startObserver (GtkApplication * app, gpointer uData)
     g_signal_connect(loadButton, "clicked", G_CALLBACK(load), NULL);
     g_signal_connect(sendButton, "clicked", G_CALLBACK(sendOpen), NULL);
     g_signal_connect(saveButton, "clicked", G_CALLBACK(save), NULL);
-    g_signal_connect(addButton, "clicked", G_CALLBACK(startAddWindow), NULL);
+    g_signal_connect(addButton, "clicked", G_CALLBACK(testFunc), NULL); //startAddWindow
 
     //lägger in fixed i window
     gtk_container_add(GTK_CONTAINER(window), fixed);
@@ -205,15 +233,15 @@ void startObserver (GtkApplication * app, gpointer uData)
     gtk_fixed_put(GTK_FIXED (fixed), addButton, 80, 450);
     gtk_fixed_put(GTK_FIXED (fixed), loadName, 250, 340);
     gtk_fixed_put(GTK_FIXED (fixed), saveName, 250, 400);
-    gtk_fixed_put(GTK_FIXED(fixed), planetList, 10, 10); //-funkar ej
+    gtk_fixed_put(GTK_FIXED(fixed), scrollWinForPlanetList, 10, 10); //-funkar ej
     gtk_fixed_put(GTK_FIXED(fixed), loadLabel, 250, 320);
     gtk_fixed_put(GTK_FIXED(fixed), saveLabel, 250, 380);
     gtk_fixed_put(GTK_FIXED(fixed), lPlanetNum, 40, 455);
-    gtk_fixed_put(GTK_FIXED(fixed), msgBox, 200, 10);
+    gtk_fixed_put(GTK_FIXED(fixed), scrollWin, 200, 10);
 
     //set tab
-    gtk_entry_set_tabs(GTK_ENTRY(loadName), tab);
-    gtk_entry_set_tabs(GTK_ENTRY(saveName), tab);
+    gtk_entry_set_tabs(loadName, tab);
+    gtk_entry_set_tabs(saveName, tab);
 
 
     //gör alla widgetar som finns i window synliga
@@ -254,14 +282,14 @@ void startAddWindow(GtkApplication * app, gpointer uData)
     addNameInput = gtk_entry_new();
     gtk_fixed_put(GTK_FIXED (addFixed), addNameLabel, 20, 20);
     gtk_fixed_put(GTK_FIXED (addFixed), addNameInput, 20, 40);
-    gtk_entry_set_tabs(GTK_ENTRY(addNameInput), tab);
+    gtk_entry_set_tabs(addNameInput, tab);
 
     //StartPos section
     addStartPosLabel = gtk_label_new("Start position: ");
     addStartX = gtk_entry_new();
-    gtk_entry_set_text(GTK_ENTRY(addStartX), "X-pos");
+    gtk_entry_set_text(addStartX, "X-pos");
     addStartY = gtk_entry_new();
-    gtk_entry_set_text(GTK_ENTRY(addStartY), "Y-pos");
+    gtk_entry_set_text(addStartY, "Y-pos");
     gtk_fixed_put(GTK_FIXED (addFixed), addStartPosLabel, 20, 80);
     gtk_fixed_put(GTK_FIXED (addFixed), addStartX, 20, 100);
     gtk_fixed_put(GTK_FIXED (addFixed), addStartY, 20, 130);
@@ -269,9 +297,9 @@ void startAddWindow(GtkApplication * app, gpointer uData)
     //Movment section
     addMovementLabel = gtk_label_new("Movement: ");
     addMovementX = gtk_entry_new();
-    gtk_entry_set_text(GTK_ENTRY(addMovementX), "X-pos");
+    gtk_entry_set_text(addMovementX, "X-pos");
     addMovementY = gtk_entry_new();
-    gtk_entry_set_text(GTK_ENTRY(addMovementY), "Y-pos");
+    gtk_entry_set_text(addMovementY, "Y-pos");
     gtk_fixed_put(GTK_FIXED (addFixed), addMovementLabel, 20, 170);
     gtk_fixed_put(GTK_FIXED (addFixed), addMovementX, 20, 190);
     gtk_fixed_put(GTK_FIXED (addFixed), addMovementY, 20, 220);
@@ -303,6 +331,7 @@ void startAddWindow(GtkApplication * app, gpointer uData)
     gtk_widget_show_all(addWindow);
 }
 
+
 //Observer funcs
 void onCheck()
 {
@@ -326,56 +355,34 @@ void printMsg(char *msg)
 }
 void load ()
 {
-    planet_type *temp = NULL;
-    PlanetDisplayList *tempDisp = NULL;
-    const gchar * filename = gtk_entry_get_text (GTK_ENTRY(loadName));
+    planet_type temp;
+    gchar * filename = gtk_entry_get_text (loadName);
     printf ("%s\n", filename);
 
     FILE *fp;
     fp = fopen(filename, "rb");
 
-    if(fp == NULL)
+
+    //TODO: Mutex stuff
+    //TODO: load planets from from file and add planets to list one by one, use createDisplayListNode() and addToDisplayList()
+
+
+    if((fclose(fp )) != 0)
     {
-      //TODO: put message in messagebox
-      printf("File could not be opened\n");
-      return;
+        printf("Error: couldn´t close file correctly\n");
+        exit(EXIT_FAILURE);
     }
-
-    while(1)
-    {
-      temp = (planet_type*)malloc(sizeof(planet_type));
-      if(fread(temp, sizeof(planet_type), 1, fp))
-      {
-        printf ("%s\n", temp->name);
-        tempDisp = createDisplayListNode(temp);
-        //TODO: Mutex stuff
-        displayListHead = addfirstToDisplayList(displayListHead, tempDisp);
-      }
-      else
-      {
-        free(temp);
-        break;
-      }
-    }
-
-
-    fclose(fp);
 }
 void save()
 {
     //TODO: mutex stuff
-    const gchar * filename = gtk_entry_get_text (GTK_ENTRY(saveName));
+    gchar * filename = gtk_entry_get_text (saveName);
     printf ("%s\n", filename);
+
+    strcat(filename, ".bin");
 
     FILE *fp;
     fp = fopen(filename, "wb");
-
-    if(fp == NULL)
-    {
-      //TODO: put message in messagebox
-      printf("File could not be opened\n");
-      return;
-    }
 
     //Make new pointer to use for saving and set it to first planet in the list
     PlanetDisplayList *temp = NULL;
@@ -384,22 +391,25 @@ void save()
     //I just save the planets so that when I load, I don´t get a checked box on every loaded planet
     while(temp != NULL)
     {
-        //TODO: Ta bort kommentaren
-        if (/*temp->checked*/1)
+        if (temp->checked)
         {
            fwrite(temp->planet, sizeof(planet_type), 1, fp);
         }
         temp = temp->next;
     }
-    fclose(fp);
+    if((fclose(fp )) != 0)
+    {
+        printf("Error: couldn´t close file correctly\n");
+        exit(EXIT_FAILURE);
+    }
 }
-//TODO: Stina Kolla: behöver vi denna funktion? Är inte den någon annan som redan finns?
+//TODO: Kolla: behöver vi denna funktion? Är inte den någon annan som redan finns?
 void addObsever()
 {
     //öppna add-fonster
     //return 404
 }
-//TODO: Stina Kolla: Vad är detta för funktion? Jag fattar inte... är det inte samma fråga som på funktionen ovan?
+//TODO: Kolla: Vad är detta för funktion? Jag fattar inte... är det inte samma fråga som på funktionen ovan?
 void sendOpen()
 {
     //create thread send planet
@@ -416,35 +426,29 @@ void add()
     //add planet to list?
     //add to displaylist
 
-    const gchar * name = gtk_entry_get_text (GTK_ENTRY(addNameInput));
-    const gchar * xpos = gtk_entry_get_text (GTK_ENTRY(addStartX));
-    const gchar * ypos = gtk_entry_get_text (GTK_ENTRY(addStartY));
-    const gchar * movx = gtk_entry_get_text (GTK_ENTRY(addMovementX));
-    const gchar * movy = gtk_entry_get_text (GTK_ENTRY(addMovementY));
-    const gchar * life = gtk_entry_get_text (GTK_ENTRY(addLifeInput));
-    const gchar * radius = gtk_entry_get_text (GTK_ENTRY(addRadiusInput));
-    const gchar * mass = gtk_entry_get_text (GTK_ENTRY(addMassInput));
-
+    gchar * name = gtk_entry_get_text (addNameInput);
+    gchar * xpos = gtk_entry_get_text (addStartX);
+    gchar * ypos = gtk_entry_get_text (addStartY);
+    gchar * movx = gtk_entry_get_text (addMovementX);
+    gchar * movy = gtk_entry_get_text (addMovementY);
+    gchar * life = gtk_entry_get_text (addLifeInput);
+    gchar * radius = gtk_entry_get_text (addRadiusInput);
+    gchar * mass = gtk_entry_get_text (addMassInput);
 
     printf ("%s\n", returnName);
     //TODO: set these with correctly casted values so that new planet can be created
     //Haven´t checked if this code works
-    char * namep = NULL;
-    strcpy(namep, name);
-    double xposp = atof(xpos);
-    double yposp = atof(ypos);
-    double xVp = atof(movx);
-    double yVp = atof(movy);
-    double massp = atof(mass);
-    int lifep = atoi(life);
-    int rp = atoi(radius);
+    // double xposp = atof(xpos);
+    // double yposp = atof(ypos);
+    // double xVp = atof(movx);
+    // double yVp = atof(movy);
+    // double massp = atof(mass);
+    // int lifep = atoi(life);
+    // int rp = atoi(radius);
 
-    planet_type* newPlanet = (planet_type*)malloc(sizeof(planet_type));
-    *newPlanet = createPlanet(namep, xposp, yposp, xVp, yVp, massp, lifep, returnName, rp);
-
-    PlanetDisplayList *temp = createDisplayListNode(newPlanet);
+    //planet_type newPlanet = createPlanet(name, xposp, yposp, xVp, yVp, massp, lifep, returnName, rp);
     //TODO: mutex stuff
-    displayListHead = addfirstToDisplayList(displayListHead, temp);
+    //displayListHead = addfirstToDisplayList(displayListHead, newPlanet);
     //TODO: Stina? uppdateGraphical interface
 }
 
@@ -467,8 +471,7 @@ void sendPlan()
 
     while(temp != NULL)
     {
-        //TODO: ta bort kommentaren
-        if (/*temp->checked*/1)
+        if (temp->checked)
         {
           check = MQwrite(&serverHandle, &temp->planet);
 
@@ -512,7 +515,7 @@ void readDeadPlan()
             activePlanets--;
             //TODO: mutex stuff for remove from active planets
             //TODO: remove planet from list
-            //sleep(3);
+            sleep(3);
         }
     }
 
@@ -530,46 +533,45 @@ void updateList()
 //Lab2
 void * sendPlanet(void * arg)
 {
-    planet_type planet[5];
-    //planet[0] = createPlanet("p1", 300.0, 300.0, 0.0, 0.0, 10000000.0, 300000000, 1, 5);
-    //planet[1] = createPlanet("p2", 200.0, 300.0, 0.0, 0.0008, 1000.0, 100000000, 2, 5 );
+    planet_type planet[6];
     planet[0] = createPlanet("p1", 300.0, 300.0, 0.0, 0.0, 10000000.0, 300000000, arg, 5);
-    planet[1] = createPlanet("p2", 200.0, 300.0, 0.0, 0.0008, 1000.0, 100000000, arg, 5);
+    planet[1] = createPlanet("p2", 200.0, 300.0, 0.0, 0.0008, 1000.0, 100000000, arg, 5 );
     planet[2] = createPlanet("p3", 400.0, 300.0, 0.0, -0.0008, 1000.0, 1000000, arg, 5);
     planet[3] = createPlanet("p4", 300.0, 200.0, -0.0008, 0.0, 1000.0, 1000, arg, 5);
     planet[4] = createPlanet("p5", 300.0, 400.0, 0.0008, 0.0, 1000.0, 1000000, arg, 5);
+    planet[5] = createPlanet("p6", 300.0, 400.0, 0.9, 0.0, 1000.0, 1000000, arg, 5);
+
     int check = 0;
 
-    sleep(2);
-
-    for(int i=0; i<5; i++)
+    for(int i=0; i<6; i++)
     {
+
         check = MQwrite(&serverHandle, &planet[i]);
+        printf("written to mq\n");
+
         if(check != 0)
         {
             printf("could not write to mailbox\n");
             break;
         }
     }
-    printf("planets sent\n");
     return NULL;
+
 }
 
 void * readDead(void * arg)
 {
-    mqd_t mq;
     int count = 0;
     planet_type tempP;
     int bytes_read;
-
-    if (!MQcreate(&mq, arg))
+    //pthread_t block;
+    if (!MQcreate(&mq, PLANETDEAD))
     {
         printf("Failed to create server!\n");
         return NULL;
     }
-    printf("created readDead!\n");
 
-    while(count < 5)
+    while(1)
     {
         bytes_read = MQread(&mq, &tempP);
         if(bytes_read != -1)
@@ -581,9 +583,18 @@ void * readDead(void * arg)
                 default: printf("Eeeeeeehhhhrror\n"); break;
             }
             count++;
+            sleep(20);
+            //pthread_create(&block, NULL, readDead/*Felfunktion*/, NULL);
+
         }
+        if(count == 5)
+        {
+            printf("I should break");
+        }
+
+
     }
-    if(MQclose(&mq, arg) == 1)
+    if(MQclose(&mq, PLANETDEAD) == 1)
     {
         printf("mailbox was successfully closed\n");
     }
@@ -591,71 +602,26 @@ void * readDead(void * arg)
 }
 
 
+    //pthread_t reader, writer;
 
-// void * readDead(void * arg)
-// {
-//     int count = 0;
-//     planet_type tempP;
-//     int bytes_read;
-//     //pthread_t block;
-//     if (!MQcreate(&mq, PLANETDEAD))
-//     {
-//         printf("Failed to create server!\n");
-//         return NULL;
-//     }
-//
-//     while(1)
-//     {
-//         bytes_read = MQread(&mq, &tempP);
-//         if(bytes_read != -1)
-//         {
-//             switch(tempP.life)
-//             {
-//                 case  0: printf("Planet %s died of old age\n", tempP.name); break;
-//                 case -1: printf("Planet %s disappeared\n", tempP.name); break;
-//                 default: printf("Eeeeeeehhhhrror\n"); break;
-//             }
-//             count++;
-//             sleep(20);
-//             //pthread_create(&block, NULL, readDead/*Felfunktion*/, NULL);
-//
-//         }
-//         if(count == 5)
-//         {
-//             printf("I should break");
-//         }
-//
-//
-//     }
-//     if(MQclose(&mq, PLANETDEAD) == 1)
-//     {
-//         printf("mailbox was successfully closed\n");
-//     }
-//     return NULL;
-// }
+    /*int i;
+    pid_t pid;
+    pid = getpid();
+    char mqReturnName[30];
+    mqReturnName[0] = '/';
+    char car[20];
+    snprintf(car, 10, "%d", pid);
+    strcat(mqReturnName, car);
 
+    //printf("%d = %s\n", (int)pid, mqReturnName);
 
-// pthread_t reader = 0;
-// pthread_t writer = 0;
-// pid_t pid;
-// pid = getpid();
-// char mqReturnName[30];
-// mqReturnName[0] = '/';
-// char car[20];
-// snprintf(car, 10, "%d", pid);
-// printf("%d = %s\n", (int)pid, mqReturnName);
-// strcat(mqReturnName, car);
-//
-//
-// if (MQconnect(&serverHandle, PLANETIPC) == 0)
-// {
-//     printf("Failed to connect to server!\n");
-//     return (EXIT_SUCCESS);
-// }
-// printf("mq connected\n");
-//
-// threadCreate(sendPlanet, writer, mqReturnName);
-// threadCreate(readDead, reader, mqReturnName);
-// pthread_exit(NULL);
-//
-// return (EXIT_SUCCESS);
+    if (MQconnect(&serverHandle, PLANETIPC) == 0)
+    {
+            printf("Failed to connect to server!\n");
+            return (EXIT_SUCCESS);
+    }
+    */
+    //printf("created server!\n");
+    //threadCreate(sendPlanet, writer, mqReturnName);
+    //threadCreate(readDead, reader, mqReturnName);
+    //pthread_exit(NULL);

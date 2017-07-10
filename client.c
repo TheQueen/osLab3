@@ -83,65 +83,39 @@ void add();
 void sendPlan();
 void readDeadPlan();
 void updateList();      //Vill vi ha denna funktion?
-void testSendPlanet();
 ////////////Lab2//////////////////////////////////////////////////
 void * sendPlanet(void * arg);
 void * readDead(void * arg);
 //////////////////////////////////////////////////////////////////
 int main(int argc, char** argv)
 {
-  pthread_t reader = 0;
-  pthread_t writer = 0;
-  pid_t pid;
-  pid = getpid();
-  char mqReturnName[30];
-  mqReturnName[0] = '/';
-  char car[20];
-  snprintf(car, 10, "%d", pid);
-  printf("%d = %s\n", (int)pid, mqReturnName);
-  strcat(mqReturnName, car);
+    pthread_t reader = 0;
+    displayListHead = NULL;
+    int status;
 
+    pid_t pid;
+    pid = getpid();
+    char mqReturnName[30];
+    mqReturnName[0] = '/';
+    char car[20];
+    snprintf(car, 10, "%d", pid);
+    strcat(mqReturnName, car);
+    returnName = mqReturnName;
+    //printf("%d = %s\n", (int)pid, mqReturnName);
 
-  if (MQconnect(&serverHandle, PLANETIPC) == 0)
-  {
-      printf("Failed to connect to server!\n");
-      return (EXIT_SUCCESS);
-  }
-  printf("mq connected\n");
+    //initTab
+    tab = pango_tab_array_new(30, TRUE);
 
-  threadCreate(sendPlanet, writer, mqReturnName);
-  threadCreate(readDead, reader, mqReturnName);
-  pthread_exit(NULL);
+    threadCreate(readDead, reader, mqReturnName);
 
-  return (EXIT_SUCCESS);
-    // pthread_t reader = 0;
-    // displayListHead = NULL;
-    // int status;
-    //
-    // pid_t pid;
-    // pid = getpid();
-    // char mqReturnName[30];
-    // mqReturnName[0] = '/';
-    // char car[20];
-    // snprintf(car, 10, "%d", pid);
-    // strcat(mqReturnName, car);
-    // returnName = mqReturnName;
-    // testSendPlanet();
-    // //printf("%d = %s\n", (int)pid, mqReturnName);
-    //
-    // //initTab
-    // tab = pango_tab_array_new(30, TRUE);
-    //
-    // threadCreate(readDead, reader, mqReturnName);
-    //
-    // //skapar appliacationen
-    // app = gtk_application_new("org.gtk.example", G_APPLICATION_FLAGS_NONE);
-    // g_signal_connect(app, "activate", G_CALLBACK(startObserver), NULL);
-    // status = g_application_run(G_APPLICATION (app), argc, argv);
-    // g_object_unref (app);
-    //
-    // //return (EXIT_SUCCESS);
-    // return status;
+    //skapar appliacationen
+    app = gtk_application_new("org.gtk.example", G_APPLICATION_FLAGS_NONE);
+    g_signal_connect(app, "activate", G_CALLBACK(startObserver), NULL);
+    status = g_application_run(G_APPLICATION (app), argc, argv);
+    g_object_unref (app);
+
+    //return (EXIT_SUCCESS);
+    return status;
 }
 
 //skräp funktion
@@ -410,6 +384,7 @@ void save()
     //I just save the planets so that when I load, I don´t get a checked box on every loaded planet
     while(temp != NULL)
     {
+        //TODO: Ta bort kommentaren
         if (/*temp->checked*/1)
         {
            fwrite(temp->planet, sizeof(planet_type), 1, fp);
@@ -492,7 +467,8 @@ void sendPlan()
 
     while(temp != NULL)
     {
-        if (temp->checked)
+        //TODO: ta bort kommentaren
+        if (/*temp->checked*/1)
         {
           check = MQwrite(&serverHandle, &temp->planet);
 
@@ -536,7 +512,7 @@ void readDeadPlan()
             activePlanets--;
             //TODO: mutex stuff for remove from active planets
             //TODO: remove planet from list
-            sleep(3);
+            //sleep(3);
         }
     }
 
@@ -659,7 +635,8 @@ void * readDead(void * arg)
 // }
 
 
-// pthread_t reader, writer;
+// pthread_t reader = 0;
+// pthread_t writer = 0;
 // pid_t pid;
 // pid = getpid();
 // char mqReturnName[30];

@@ -19,11 +19,9 @@ double x = 0.0;
 double y = 0.0;
 double x2 = 5.0;
 
-#define PLANETIPC "/PlanetLab"
-#define FNAME "/mapVars"
+#define PLANETIPC "/PlanetLabz"
 #define PLANETDEAD "/Deeeeead"
 mqd_t mq;
-
 ListHead * head;
 int id = 1;
 
@@ -141,59 +139,71 @@ void * handlePlanet(void * arg)
     pthread_exit(NULL);
 }
 
+//Fungerande fast med annan kod
+// void * getPlanets(void * arg)
+// {
+//     planet_type tempP;
+//     int bytes_read;
+//     Node * ptr;
+//     if (!MQcreate(&mq, PLANETIPC))
+//     {
+//         printf("Failed to create server!\n");
+//         return NULL;
+//     }
+//     printf("created server!\n");
+//
+//     while(1)
+//     {
+//         bytes_read = MQread(&mq, &tempP);
+//         if(bytes_read != -1)
+//         {
+//             pthread_mutex_lock(&addOrRemove);
+//             ptr = addNode(head, &tempP);
+//             pthread_mutex_unlock(&addOrRemove);
+//
+//             printf("Planet %s: proc %s\n", tempP.name, tempP.pid);
+//             fflush(stdout);
+//             threadCreate(handlePlanet, tempP.name, ptr->planet);
+//         }
+//     }
+// }
+
+//Stinas
 void * getPlanets(void * arg)
 {
-    printf("getPlanets\n");
-    fflush(stdout);
-    planet_type * tempP;
-
-
+    planet_type tempP;
     int bytes_read;
-
     if (!MQcreate(&mq, PLANETIPC))
     {
         printf("Failed to create server!\n");
         return NULL;
     }
-
-    printf("created server!\n");
-    fflush(stdout);
-
     while(1)
     {
-        printf("while\n");
-        fflush(stdout);
-        tempP = (planet_type *) malloc(sizeof(planet_type ));
-        //printf("kolla tempP\nsize planet_type = %d\nsize thempP = %d\n", sizeof(planet_type)), sizeof(*tempP);
-        fflush(stdout);
-        if(tempP == NULL)
+        // tempP = (planet_type *) malloc(sizeof(planet_type ));
+        // if(tempP == NULL)
+        // {
+        //     printf("tempP == NULL\n");
+        //     fflush(stdout);
+        //     exit(EXIT_FAILURE);
+        // }
+        bytes_read = MQread(&mq, &tempP);
+        if(bytes_read != -1)
         {
-            printf("tempP == NULL\n");
-            fflush(stdout);
-            exit(EXIT_FAILURE);
-        }
-
-        bytes_read = MQread(&mq, tempP);
-        printf("MQread\n");
-        fflush(stdout);
-
-        if(bytes_read == -1)
-        {
-            printf("Error MQread: %s\n", strerror(errno));
-            //return NULL;
-        }
-        else
-        {
-
             pthread_mutex_lock(&addOrRemove);
-            Node * p = addNode(head, *tempP);
+            Node * p = addNode(head, tempP);
             pthread_mutex_unlock(&addOrRemove);
-            printf("Planet %d: %s\n", id, tempP->name);
+            //printf("Planet %d: %s\n", id, tempP->name);
             //tempP.pid = id;//ehhhhhhh ska vi göra såhär? hur vet clienten vilka planeter den ska få tillbaka?
             threadCreate(handlePlanet, id, p->planet);
             id++;
         }
-        free(tempP);
+        else
+        {
+            printf("Error MQread: %s\n", strerror(errno));
+            fflush(stdout);
+            //exit(EXIT_FAILURE);
+        }
     }
 }
 
@@ -285,3 +295,56 @@ int main(int argc, char *argv[]) //Main function
     pthread_exit(NULL);
     return 0;
 }
+
+
+
+// void * getPlanets(void * arg)
+// {
+//     printf("getPlanets\n");
+//     fflush(stdout);
+//     planet_type * tempP;
+//     int bytes_read;
+//
+//     if (!MQcreate(&mq, PLANETIPC))
+//     {
+//         printf("Failed to create server!\n");
+//         return NULL;
+//     }
+//     printf("created server!\n");
+//     fflush(stdout);
+//     while(1)
+//     {
+//         printf("while\n");
+//         fflush(stdout);
+//         tempP = (planet_type *) malloc(sizeof(planet_type ));
+//         //printf("kolla tempP\nsize planet_type = %d\nsize thempP = %d\n", sizeof(planet_type)), sizeof(*tempP);
+//         fflush(stdout);
+//         if(tempP == NULL)
+//         {
+//             printf("tempP == NULL\n");
+//             fflush(stdout);
+//             exit(EXIT_FAILURE);
+//         }
+//
+//         bytes_read = MQread(&mq, tempP);
+//         printf("MQread\n");
+//         fflush(stdout);
+//
+//         if(bytes_read == -1)
+//         {
+//             printf("Error MQread: %s\n", strerror(errno));
+//             //return NULL;
+//         }
+//         else
+//         {
+//             pthread_mutex_lock(&addOrRemove);
+//             Node * p = addNode(head, *tempP);
+//             pthread_mutex_unlock(&addOrRemove);
+//             printf("Planet %d: %s\n", id, tempP->name);
+//             //tempP.pid = id;//ehhhhhhh ska vi göra såhär? hur vet clienten vilka planeter den ska få tillbaka?
+//             threadCreate(handlePlanet, id, p->planet);
+//             id++;
+//         }
+//         free(tempP);
+//     }
+// }

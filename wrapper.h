@@ -22,15 +22,15 @@ int MQclose(mqd_t * mq, char * name);
 
 
 typedef struct pt {
-	char	name[20];               // Name of planet
-	double	sx;			// X-axis position
-	double	sy;			// Y-axis position
-	double	vx;			// X-axis velocity
-	double	vy;			// Y-axis velocity
-	double	mass;                   // Planet mass
-	int	life;                   // Planet life
-	char	pid[30];                //ID of creating process
-        int     radius;                 //Radius of the planet
+	char		name[20];             // Name of planet
+	double	sx;										// X-axis position
+	double	sy;										// Y-axis position
+	double	vx;										// X-axis velocity
+	double	vy;										// Y-axis velocity
+	double	mass;                 // Planet mass
+	int			life;                 // Planet life
+	char		pid[30];              //ID of creating process
+  int     radius;               //Radius of the planet
 } planet_type;
 
 planet_type createPlanet(char * name, double xpos, double ypos, double xV, double yV, double mass, int life, char * pid, int r);

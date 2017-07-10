@@ -13,7 +13,7 @@
 #include "list.h"
 #include "planetDisplayList.h"
 
-#define PLANETIPC "/PlanetLab"
+#define PLANETIPC "/PlanetLabz"
 #define PLANETDEAD "/Deeeeead" //TODO: Fix this to be unique(also in server) -- Jag tror jag kommer ihåg att jakob sa att vi behövde fixa det till nästa lab
 
 char * returnName;
@@ -83,7 +83,7 @@ void add();
 void sendPlan();
 void readDeadPlan();
 void updateList();      //Vill vi ha denna funktion?
-
+void testSendPlanet();
 ////////////Lab2//////////////////////////////////////////////////
 void * sendPlanet(void * arg);
 void * readDead(void * arg);
@@ -102,7 +102,7 @@ int main(int argc, char** argv)
     snprintf(car, 10, "%d", pid);
     strcat(mqReturnName, car);
     returnName = mqReturnName;
-
+    testSendPlanet();
     //printf("%d = %s\n", (int)pid, mqReturnName);
 
     //initTab
@@ -525,6 +525,36 @@ void readDeadPlan()
 //Vill vi ha denna kanske?
 void updateList()
 {
+}
+
+
+
+void testSendPlanet()
+{
+    planet_type planet[6];
+    planet[0] = createPlanet("p1", 300.0, 300.0, 0.0, 0.0, 10000000.0, 300000000, "/1234", 5);
+    planet[1] = createPlanet("p2", 200.0, 300.0, 0.0, 0.0008, 1000.0, 100000000, "/1234", 5 );
+    planet[2] = createPlanet("p3", 400.0, 300.0, 0.0, -0.0008, 1000.0, 1000000, "/1234", 5);
+    planet[3] = createPlanet("p4", 300.0, 200.0, -0.0008, 0.0, 1000.0, 1000, "/1234", 5);
+    planet[4] = createPlanet("p5", 300.0, 400.0, 0.0008, 0.0, 1000.0, 1000000, "/1234", 5);
+    planet[5] = createPlanet("p6", 300.0, 400.0, 0.9, 0.0, 1000.0, 1000000, "/1234", 5);
+
+    int check = 0;
+
+    for(int i=0; i<6; i++)
+    {
+
+        check = MQwrite(&serverHandle, &planet[i]);
+        printf("written to mq\n");
+
+        if(check != 0)
+        {
+            printf("could not write to mailbox\n");
+            break;
+        }
+    }
+    return;
+
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////

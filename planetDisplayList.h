@@ -3,6 +3,7 @@
 #define PLANETDISPLAYLIST_H
 #include <gtk/gtk.h>
 #include "wrapper.h"
+#include "string.h"
 
 
 typedef struct planetDisplayList PlanetDisplayList;
@@ -19,12 +20,13 @@ struct planetDisplayList
 };
 
 //Förslag på vad vi kanske behöver
-PlanetDisplayList *createDisplayListNode(planet_type *newPlanet);
+
+PlanetDisplayList* createDisplayListNode(planet_type *newPlanet);
 PlanetDisplayList* addFirstToDisplayList(PlanetDisplayList *head, PlanetDisplayList *newPlanet);
-//init
-//remove
+PlanetDisplayList* findPlanet(PlanetDisplayList *node, char *name);
+PlanetDisplayList *removePlanet(PlanetDisplayList *node, char *name);
+
 //empty
-//find
 //check
 //uncheck
 //setActive

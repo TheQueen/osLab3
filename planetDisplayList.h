@@ -20,10 +20,12 @@ struct planetDisplayList
 };
 
 //Förslag på vad vi kanske behöver
+
 PlanetDisplayList* createDisplayListNode(planet_type *newPlanet);
 PlanetDisplayList* addFirstToDisplayList(PlanetDisplayList *head, PlanetDisplayList *newPlanet);
 PlanetDisplayList* findPlanet(PlanetDisplayList *node, char *name);
 PlanetDisplayList *removePlanet(PlanetDisplayList *node, char *name);
+
 //empty
 //check
 //uncheck

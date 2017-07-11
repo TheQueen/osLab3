@@ -57,6 +57,19 @@ GtkWidget * addRadiusInput;
 GtkWidget * addMassLabel;
 GtkWidget * addMassInput;
 GtkWidget * addFixed;
+GtkWidget * scrollWin;
+GtkWidget * scrollWinForPlanetList;
+GtkWidget * scrollWinForSentPlanet;
+
+GtkWidget * sentPlanets;
+
+GtkWidget * frameForLocal; 
+GtkWidget * frameForSentPlanet; 
+
+GtkWidget * tempWidg;
+GtkWidget * tempWidgTwo; 
+
+
 PangoTabArray * tab; //sak för att kunna tabba igenom alla knappar och inputrutor
 
 //////////////////////////////stuff//////////////////////////////////////////////
@@ -70,12 +83,12 @@ void startAddWindow(GtkApplication * app, gpointer uData);
 
 //Observer
 void onCheck();
-void onUnCheck();
 void printMsg(char *msg);
 void load();
 void save();
 void addObsever(); //Eh behöver vi denna? Den är väl lika med startAddWindow?
 void sendOpen(); //Vad är detta för funktion?
+
 
 //Add
 void add();
@@ -128,7 +141,43 @@ int main(int argc, char** argv)
 //skräp funktion
 void testFunc()
 {
-    printf ("haha");
+    GtkTextIter iter; 
+    gtk_text_buffer_get_iter_at_offset(msgBoxBuffer, &iter, 0);
+     gtk_text_buffer_insert(msgBoxBuffer, &iter, "Plain text\n", -1);
+    //gtk_widget_destroy(tempWidgTwo);
+	tempWidgTwo = gtk_check_button_new_with_label("trying stuffffff");
+	gtk_container_add(planetList, tempWidgTwo);//, -1);
+	gtk_widget_show_all(window);
+    
+}
+
+void testFuncTwo(GtkWidget *widget, gpointer data)
+{
+	if (gtk_toggle_button_get_active(widget) == TRUE) 
+		{
+			printf("clicked");
+			fflush(stdout);
+		}
+		else
+		{
+			printf("unclicked");
+			fflush(stdout); 
+		}
+
+}
+
+void toggle_button_callback (GtkWidget *widget, gpointer   data)
+{
+    if (GTK_TOGGLE_BUTTON (widget) == TRUE) 
+    {
+        printf("unclicked");
+		fflush(stdout);
+    }
+	else
+	{
+		printf("clicked");
+		fflush(stdout); 
+	}
 }
 
 void startObserver (GtkApplication * app, gpointer uData)
@@ -146,9 +195,11 @@ void startObserver (GtkApplication * app, gpointer uData)
 
     //denna kod är inte klar har inte fått den att funka än  så återkommer
     //när den funkar
-    gboolean a = TRUE;
+    /*gboolean a = TRUE;
     planetList = gtk_tree_view_new(); // behöver fixas till
-    gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(planetList), a);
+    scrollWinForPlanetList = gtk_scrolled_window_new(NULL,NULL);
+    gtk_container_add(GTK_CONTAINER(scrollWinForPlanetList), planetList);
+    gtk_tree_view_set_headers_visible(planetList, a);
 
 
     //samma med denna
@@ -161,20 +212,50 @@ void startObserver (GtkApplication * app, gpointer uData)
     GtkTreeViewColumn * localColumn = gtk_tree_view_column_new();
     gtk_tree_view_column_set_title(localColumn, "Local");
 
-    gtk_tree_view_append_column(GTK_TREE_VIEW(planetList), checkColumn);
-    gtk_tree_view_append_column(GTK_TREE_VIEW(planetList), planetsColumn);
-    gtk_tree_view_append_column(GTK_TREE_VIEW(planetList), localColumn);
-
-    //och denna//
+    gtk_tree_view_append_column(planetList, checkColumn);
+    gtk_tree_view_append_column(planetList, planetsColumn);
+    gtk_tree_view_append_column(planetList, localColumn);
+*/
+    
+    ///////////////////////////////////////PlanetList//////////////////////////////////////////////
+    
+    scrollWinForPlanetList = gtk_scrolled_window_new(NULL,NULL);
+    planetList = gtk_list_box_new();
+    gtk_container_add(GTK_CONTAINER(scrollWinForPlanetList), planetList);
+    
+    tempWidg = gtk_check_button_new_with_label("remove this");
+    //gtk_list_box_insert(planetList, tempWidg, -1); 
+    
+    gtk_list_box_insert(planetList, tempWidg, -1);
+    
+    frameForLocal = gtk_frame_new("Local Planets"); 
+    gtk_container_add(GTK_CONTAINER(frameForLocal), scrollWinForPlanetList);
+    gtk_widget_set_size_request(frameForLocal, 180, 200); 
+    
+    
+    //////////////////////////////////////////Sent planets/////////////////////////////////////////
+    
+    scrollWinForSentPlanet = gtk_scrolled_window_new(NULL,NULL);
+    sentPlanets = gtk_list_box_new();
+    frameForSentPlanet = gtk_frame_new("Sent Planets");
+    
+    gtk_container_add(GTK_CONTAINER(scrollWinForSentPlanet), sentPlanets);
+    gtk_container_add(GTK_CONTAINER(frameForSentPlanet), scrollWinForSentPlanet);
+    
+    gtk_widget_set_size_request(frameForSentPlanet, 180, 200);
+    
+    ////////////////////////////////////////////MsgBox/////////////////////////////////////////////
     msgBoxBuffer = gtk_text_buffer_new(NULL);
     gtk_text_buffer_set_text(msgBoxBuffer, "hello", 5);
-    //denna oxå
+    //denna funkar nu
     msgBox = gtk_text_view_new();
 
-    gtk_text_view_set_buffer(GTK_TEXT_VIEW(msgBox), msgBoxBuffer);
+    gtk_text_view_set_buffer(msgBox, msgBoxBuffer);
 
-    gtk_widget_set_size_request(msgBox, 270, 250);
-    gtk_widget_set_size_request(planetList, 180, 400);
+    scrollWin = gtk_scrolled_window_new(NULL,NULL);
+    gtk_container_add(GTK_CONTAINER(scrollWin), msgBox);
+    
+    gtk_widget_set_size_request(scrollWin, 270, 250);
 
     //skapar alla statiska texter
     loadLabel = gtk_label_new("Load planets");
@@ -186,8 +267,8 @@ void startObserver (GtkApplication * app, gpointer uData)
     saveName = gtk_entry_new();
 
     //sätter den temporära texten i textfälten
-    gtk_entry_set_text(GTK_ENTRY(loadName), "Enter filename");
-    gtk_entry_set_text(GTK_ENTRY(saveName), "Enter filename");
+    gtk_entry_set_text(loadName, "Enter filename");
+    gtk_entry_set_text(saveName, "Enter filename");
 
     //skapar alla knapparna och sätter en text på dem
     loadButton = gtk_button_new_with_label("load");
@@ -198,10 +279,11 @@ void startObserver (GtkApplication * app, gpointer uData)
     //sätter vad som ska hända när man klickar på knappen
     //tex load knappen som kallar load funktionen
     g_signal_connect(loadButton, "clicked", G_CALLBACK(load), NULL);
-    g_signal_connect(sendButton, "clicked", G_CALLBACK(sendOpen), NULL);
     g_signal_connect(saveButton, "clicked", G_CALLBACK(save), NULL);
+
     g_signal_connect(addButton, "clicked", G_CALLBACK(startAddWindow), NULL);
     g_signal_connect(sendButton, "clicked", G_CALLBACK(sendPlan), NULL);
+
 
     //lägger in fixed i window
     gtk_container_add(GTK_CONTAINER(window), fixed);
@@ -213,38 +295,22 @@ void startObserver (GtkApplication * app, gpointer uData)
     gtk_fixed_put(GTK_FIXED (fixed), addButton, 80, 450);
     gtk_fixed_put(GTK_FIXED (fixed), loadName, 250, 340);
     gtk_fixed_put(GTK_FIXED (fixed), saveName, 250, 400);
-    gtk_fixed_put(GTK_FIXED(fixed), planetList, 10, 10); //-funkar ej
+    gtk_fixed_put(GTK_FIXED(fixed), frameForLocal, 10, 10); //-funkar ej
     gtk_fixed_put(GTK_FIXED(fixed), loadLabel, 250, 320);
     gtk_fixed_put(GTK_FIXED(fixed), saveLabel, 250, 380);
     gtk_fixed_put(GTK_FIXED(fixed), lPlanetNum, 40, 455);
-    gtk_fixed_put(GTK_FIXED(fixed), msgBox, 200, 10);
-
+    gtk_fixed_put(GTK_FIXED(fixed), scrollWin, 200, 10);
+    gtk_fixed_put(GTK_FIXED(fixed), frameForSentPlanet, 10, 220);
+    
     //set tab
-    gtk_entry_set_tabs(GTK_ENTRY(loadName), tab);
-    gtk_entry_set_tabs(GTK_ENTRY(saveName), tab);
+    gtk_entry_set_tabs(loadName, tab);
+    gtk_entry_set_tabs(saveName, tab);
 
 
     //gör alla widgetar som finns i window synliga
     gtk_widget_show_all(window);
 
 }
-
-/*GtkWidget * addWindow;
-GtkWidget * finalAddButton;
-GtkWidget * addNameLabel;
-GtkWidget * addNameInput;
-GtkWidget * addStartPosLabel;
-GtkWidget * addStartX;
-GtkWidget * addStartY;
-GtkWidget * addMovementLabel;
-GtkWidget * addMovementX;
-GtkWidget * addMovementY;
-GtkWidget * addLifeLabel;
-GtkWidget * addLifeInput;
-GtkWidget * addRadiusLabel;
-GtkWidget * addRadiusInput;
-GtkWidget * addMassLable;
-GtkWidget * addMassInput; */
 
 void startAddWindow(GtkApplication * app, gpointer uData)
 {
@@ -262,43 +328,50 @@ void startAddWindow(GtkApplication * app, gpointer uData)
     addNameInput = gtk_entry_new();
     gtk_fixed_put(GTK_FIXED (addFixed), addNameLabel, 20, 20);
     gtk_fixed_put(GTK_FIXED (addFixed), addNameInput, 20, 40);
-    gtk_entry_set_tabs(GTK_ENTRY(addNameInput), tab);
+    gtk_entry_set_tabs(addNameInput, tab);
 
     //StartPos section
+	GtkAdjustment * Adj = gtk_adjustment_new(0, 0, 800, 1, 1, 1);
     addStartPosLabel = gtk_label_new("Start position: ");
-    addStartX = gtk_entry_new();
-    gtk_entry_set_text(GTK_ENTRY(addStartX), "X-pos");
-    addStartY = gtk_entry_new();
-    gtk_entry_set_text(GTK_ENTRY(addStartY), "Y-pos");
+    addStartX = gtk_spin_button_new (Adj, 2, 3);
+    gtk_entry_set_text(addStartX, "X-pos");
+	Adj = gtk_adjustment_new(0, 0, 600, 1, 1, 1);
+    addStartY = gtk_spin_button_new (Adj, 2, 3);
+    gtk_entry_set_text(addStartY, "Y-pos");
     gtk_fixed_put(GTK_FIXED (addFixed), addStartPosLabel, 20, 80);
     gtk_fixed_put(GTK_FIXED (addFixed), addStartX, 20, 100);
     gtk_fixed_put(GTK_FIXED (addFixed), addStartY, 20, 130);
 
     //Movment section
     addMovementLabel = gtk_label_new("Movement: ");
-    addMovementX = gtk_entry_new();
-    gtk_entry_set_text(GTK_ENTRY(addMovementX), "X-pos");
-    addMovementY = gtk_entry_new();
-    gtk_entry_set_text(GTK_ENTRY(addMovementY), "Y-pos");
+	Adj = gtk_adjustment_new(0, -1, 2, 0.01, 1, 1);
+    addMovementX = gtk_spin_button_new (Adj, 2, 4);
+    gtk_entry_set_text(addMovementX, "X-pos");
+	Adj = gtk_adjustment_new(0, -1, 2, 0.01, 1, 1);
+    addMovementY =  gtk_spin_button_new (Adj, 2, 4);
+    gtk_entry_set_text(addMovementY, "Y-pos");
     gtk_fixed_put(GTK_FIXED (addFixed), addMovementLabel, 20, 170);
     gtk_fixed_put(GTK_FIXED (addFixed), addMovementX, 20, 190);
     gtk_fixed_put(GTK_FIXED (addFixed), addMovementY, 20, 220);
 
     //Life section
     addLifeLabel = gtk_label_new("Life: ");
-    addLifeInput = gtk_entry_new();
+	Adj = gtk_adjustment_new(0, 0, 10000000, 1, 1, 1);
+    addLifeInput = gtk_spin_button_new (Adj, 2, 3);
     gtk_fixed_put(GTK_FIXED (addFixed), addLifeLabel, 20, 260);
     gtk_fixed_put(GTK_FIXED (addFixed), addLifeInput, 20, 280);
 
     //radius section
     addRadiusLabel = gtk_label_new("Radius: ");
-    addRadiusInput = gtk_entry_new();
+	Adj = gtk_adjustment_new(0, 0, 10, 1, 1, 1);
+    addRadiusInput = gtk_spin_button_new (Adj, 2, 3);
     gtk_fixed_put(GTK_FIXED (addFixed), addRadiusLabel, 20, 320);
     gtk_fixed_put(GTK_FIXED (addFixed), addRadiusInput, 20, 340);
 
     //mass section
     addMassLabel = gtk_label_new("Mass: ");
-    addMassInput = gtk_entry_new();
+	Adj = gtk_adjustment_new(0, 0, 10000000, 1, 1, 1);
+    addMassInput = gtk_spin_button_new (Adj, 2, 3);
     gtk_fixed_put(GTK_FIXED (addFixed), addMassLabel, 20, 380);
     gtk_fixed_put(GTK_FIXED (addFixed), addMassInput, 20, 400);
 
@@ -312,21 +385,45 @@ void startAddWindow(GtkApplication * app, gpointer uData)
 }
 
 //Observer funcs
-void onCheck()
+void onCheck(GtkWidget *widget)
 {
     //Denna är nog Stinas
     //TODO: mutex stuff
     //ändra utseende
     //ändra int checked
+	
+	char * name = gtk_button_get_label(widget); 
+	int check = 0;
+    PlanetDisplayList *temp = NULL;
+    temp = displayListHead;
+
+    
+//byt mot find Planet
+    while(temp != NULL)
+    {
+		if(temp == NULL)
+		{
+			printMsg("Error: No planets in list!\n");
+			return;
+		}
+        if (strcmp(temp->planet->name, name) == 0)
+        {
+          	if (GTK_TOGGLE_BUTTON (widget) == TRUE)
+			{
+				temp->checked = 1;
+			}
+			else
+			{
+				temp->checked = 0; 
+			}
+        }
+
+        temp = temp->next;
+    }
+	//find displaylistnode with name
 }
-void onUnCheck()
-{
-    //Denna är nog Stinas
-    //TODO: mutex stuff
-    //ändra utseende
-    //ändra int checked
-}
-void printMsg(char *msg)
+
+void printMsg(char * msg)
 {
     //TODO: Denna är nog Stinas
     //ska skiriva i meddelanderuta egentligen
@@ -334,20 +431,14 @@ void printMsg(char *msg)
 }
 void load ()
 {
-    planet_type *temp = NULL;
-    PlanetDisplayList *tempDisp = NULL;
-    const gchar * filename = gtk_entry_get_text (GTK_ENTRY(loadName));
+    planet_type temp;
+    gchar * filename = gtk_entry_get_text (loadName);
     printf ("%s\n", filename);
 
     FILE *fp;
     fp = fopen(filename, "rb");
 
-    if(fp == NULL)
-    {
-      //TODO: put message in messagebox
-      printf("File could not be opened\n");
-      return;
-    }
+
 
     while(1)
     {
@@ -367,23 +458,23 @@ void load ()
     }
 
 
-    fclose(fp);
+
+    if((fclose(fp )) != 0)
+    {
+        printf("Error: couldn´t close file correctly\n");
+        exit(EXIT_FAILURE);
+    }
 }
 void save()
 {
     //TODO: mutex stuff
-    const gchar * filename = gtk_entry_get_text (GTK_ENTRY(saveName));
+    gchar * filename = gtk_entry_get_text (saveName);
     printf ("%s\n", filename);
+
+    strcat(filename, ".bin");
 
     FILE *fp;
     fp = fopen(filename, "wb");
-
-    if(fp == NULL)
-    {
-      //TODO: put message in messagebox
-      printf("File could not be opened\n");
-      return;
-    }
 
     //Make new pointer to use for saving and set it to first planet in the list
     PlanetDisplayList *temp = NULL;
@@ -392,22 +483,26 @@ void save()
     //I just save the planets so that when I load, I don´t get a checked box on every loaded planet
     while(temp != NULL)
     {
-        //TODO: Ta bort kommentaren
-        if (/*temp->checked*/1)
+        if (temp->checked)
+
         {
            fwrite(temp->planet, sizeof(planet_type), 1, fp);
         }
         temp = temp->next;
     }
-    fclose(fp);
+    if((fclose(fp )) != 0)
+    {
+        printf("Error: couldn´t close file correctly\n");
+        exit(EXIT_FAILURE);
+    }
 }
-//TODO: Stina Kolla: behöver vi denna funktion? Är inte den någon annan som redan finns?
+//TODO: Kolla: behöver vi denna funktion? Är inte den någon annan som redan finns?
 void addObsever()
 {
     //öppna add-fonster
     //return 404
 }
-//TODO: Stina Kolla: Vad är detta för funktion? Jag fattar inte... är det inte samma fråga som på funktionen ovan?
+//TODO: Kolla: Vad är detta för funktion? Jag fattar inte... är det inte samma fråga som på funktionen ovan?
 void sendOpen()
 {
     //create thread send planet
@@ -424,36 +519,28 @@ void add()
     //add planet to list?
     //add to displaylist
 
-    const gchar * name = gtk_entry_get_text (GTK_ENTRY(addNameInput));
-    const gchar * xpos = gtk_entry_get_text (GTK_ENTRY(addStartX));
-    const gchar * ypos = gtk_entry_get_text (GTK_ENTRY(addStartY));
-    const gchar * movx = gtk_entry_get_text (GTK_ENTRY(addMovementX));
-    const gchar * movy = gtk_entry_get_text (GTK_ENTRY(addMovementY));
-    const gchar * life = gtk_entry_get_text (GTK_ENTRY(addLifeInput));
-    const gchar * radius = gtk_entry_get_text (GTK_ENTRY(addRadiusInput));
-    const gchar * mass = gtk_entry_get_text (GTK_ENTRY(addMassInput));
+	
+    const char * name = gtk_entry_get_text (addNameInput);
+    const double xpos = gtk_spin_button_get_value (addStartX);
+    const double ypos = gtk_spin_button_get_value (addStartY);
+    const double movx = gtk_spin_button_get_value (addMovementX);
+    const double movy = gtk_spin_button_get_value (addMovementY);
+    const double life = gtk_spin_button_get_value (addLifeInput);
+    const int radius = gtk_spin_button_get_value_as_int (addRadiusInput);
+    const double mass = gtk_spin_button_get_value (addMassInput);
 
+    printf ("name: %s\n", name);
 
-    printf ("%s\n", returnName);
-    //TODO: set these with correctly casted values so that new planet can be created
-    //Haven´t checked if this code works
-    char * namep = NULL;
-    strcpy(namep, name);
-    double xposp = atof(xpos);
-    double yposp = atof(ypos);
-    double xVp = atof(movx);
-    double yVp = atof(movy);
-    double massp = atof(mass);
-    int lifep = atoi(life);
-    int rp = atoi(radius);
-
-    planet_type* newPlanet = (planet_type*)malloc(sizeof(planet_type));
-    *newPlanet = createPlanet(namep, xposp, yposp, xVp, yVp, massp, lifep, returnName, rp);
-
-    PlanetDisplayList *temp = createDisplayListNode(newPlanet);
+	
+    planet_type newPlanet = createPlanet(name, xpos, ypos, movx, movy, mass, life, returnName, radius);
     //TODO: mutex stuff
-    displayListHead = addFirstToDisplayList(displayListHead, temp);
-    //TODO: Stina? uppdateGraphical interface
+
+    displayListHead = addFirstToDisplayList(displayListHead, &newPlanet);
+	displayListHead->check = gtk_check_button_new_with_label(name);
+	gtk_container_add(planetList, displayListHead->check);//, -1);
+	g_signal_connect(displayListHead->check, "toggled",G_CALLBACK(onCheck), NULL); 
+	gtk_widget_show_all(window);
+
 }
 
 ////////////////////////////Övrigt///////////////////////////////////////////////////////////////////////////
@@ -502,7 +589,9 @@ void sendPlan()
         //TODO: ta bort kommentaren
         if (/*temp->checked*/1)
         {
+
           check = MQwrite(&serverHandle, temp->planet);
+
           if(check != 0)
           {
               printf("could not write to mailbox: %s\n", strerror(errno));

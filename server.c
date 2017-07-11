@@ -19,7 +19,7 @@ double x = 0.0;
 double y = 0.0;
 double x2 = 5.0;
 
-#define PLANETIPC "/PlanetLaba"
+#define PLANETIPC "/PlanetLab"
 mqd_t mq;
 ListHead * head;
 int id = 1;
@@ -326,10 +326,12 @@ void * getPlanets(void * arg)
         return NULL;
     }
     printf("created server!\n");
-
+    fflush(stdout);
     while(1)
     {
         bytes_read = MQread(&mq, &tempP);
+        printf("after MQread!\n");
+        fflush(stdout);
         if(bytes_read != -1)
         {
             pthread_mutex_lock(&addOrRemove);

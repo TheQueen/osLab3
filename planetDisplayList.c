@@ -15,7 +15,7 @@ PlanetDisplayList *createDisplayListNode(planet_type *newPlanet)
 }
 
 //adds first, returns new head
-PlanetDisplayList* addfirstToDisplayList(PlanetDisplayList *head, PlanetDisplayList *newPlanet)
+PlanetDisplayList* addFirstToDisplayList(PlanetDisplayList *head, PlanetDisplayList *newPlanet)
 {
   newPlanet->next = head;
   return newPlanet;

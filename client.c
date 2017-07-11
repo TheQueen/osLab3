@@ -13,7 +13,7 @@
 #include "list.h"
 #include "planetDisplayList.h"
 
-#define PLANETIPC "/PlanetLab"
+#define PLANETIPC "/PlanetLabd"
 #define PLANETDEAD "/Deeeeead" //TODO: Fix this to be unique(also in server) -- Jag tror jag kommer ihåg att jakob sa att vi behövde fixa det till nästa lab
 
 char * returnName;
@@ -83,7 +83,6 @@ void add();
 void sendPlan();
 void readDeadPlan();
 void updateList();      //Vill vi ha denna funktion?
-
 ////////////Lab2//////////////////////////////////////////////////
 void * sendPlanet(void * arg);
 void * readDead(void * arg);
@@ -102,8 +101,14 @@ int main(int argc, char** argv)
     snprintf(car, 10, "%d", pid);
     strcat(mqReturnName, car);
     returnName = mqReturnName;
+    printf("%d = %s\n", (int)pid, returnName);
 
-    //printf("%d = %s\n", (int)pid, mqReturnName);
+    if (MQconnect(&serverHandle, PLANETIPC) == 0)
+    {
+        printf("Failed to connect to server!\n");
+        return (EXIT_SUCCESS);
+    }
+    printf("mq connected\n");
 
     //initTab
     tab = pango_tab_array_new(30, TRUE);
@@ -196,6 +201,7 @@ void startObserver (GtkApplication * app, gpointer uData)
     g_signal_connect(sendButton, "clicked", G_CALLBACK(sendOpen), NULL);
     g_signal_connect(saveButton, "clicked", G_CALLBACK(save), NULL);
     g_signal_connect(addButton, "clicked", G_CALLBACK(startAddWindow), NULL);
+    g_signal_connect(sendButton, "clicked", G_CALLBACK(sendPlan), NULL);
 
     //lägger in fixed i window
     gtk_container_add(GTK_CONTAINER(window), fixed);
@@ -305,7 +311,6 @@ void startAddWindow(GtkApplication * app, gpointer uData)
     gtk_widget_show_all(addWindow);
 }
 
-
 //Observer funcs
 void onCheck()
 {
@@ -352,7 +357,7 @@ void load ()
         printf ("%s\n", temp->name);
         tempDisp = createDisplayListNode(temp);
         //TODO: Mutex stuff
-        displayListHead = addfirstToDisplayList(displayListHead, tempDisp);
+        displayListHead = addFirstToDisplayList(displayListHead, tempDisp);
       }
       else
       {
@@ -387,6 +392,7 @@ void save()
     //I just save the planets so that when I load, I don´t get a checked box on every loaded planet
     while(temp != NULL)
     {
+        //TODO: Ta bort kommentaren
         if (/*temp->checked*/1)
         {
            fwrite(temp->planet, sizeof(planet_type), 1, fp);
@@ -446,21 +452,45 @@ void add()
 
     PlanetDisplayList *temp = createDisplayListNode(newPlanet);
     //TODO: mutex stuff
-    displayListHead = addfirstToDisplayList(displayListHead, temp);
+    displayListHead = addFirstToDisplayList(displayListHead, temp);
     //TODO: Stina? uppdateGraphical interface
 }
 
 ////////////////////////////Övrigt///////////////////////////////////////////////////////////////////////////
 void sendPlan()
 {
+    //sendPlanet(returnName);
     //get planets from list
     //send planet
     //print msg
     //TODO: mutex stuff
+    planet_type p[5];
+
+    p[0] = createPlanet("p1", 300.0, 300.0, 0.0, 0.0, 10000000.0, 300000000, returnName, 5);
+    p[1] = createPlanet("p2", 200.0, 300.0, 0.0, 0.0008, 1000.0, 100000000, returnName, 5);
+    p[2] = createPlanet("p3", 400.0, 300.0, 0.0, -0.0008, 1000.0, 1000000, returnName, 5);
+    p[3] = createPlanet("p4", 300.0, 200.0, -0.0008, 0.0, 1000.0, 1000, returnName, 5);
+    p[4] = createPlanet("p5", 300.0, 400.0, 0.0008, 0.0, 1000.0, 1000000, returnName, 5);
+
+    printf("%s\n", p[0].name);
+
+    displayListHead = addFirstToDisplayList(displayListHead, createDisplayListNode(&p[0]));
+    displayListHead = addFirstToDisplayList(displayListHead, createDisplayListNode(&p[1]));
+    displayListHead = addFirstToDisplayList(displayListHead, createDisplayListNode(&p[2]));
+    displayListHead = addFirstToDisplayList(displayListHead, createDisplayListNode(&p[3]));
+    displayListHead = addFirstToDisplayList(displayListHead, createDisplayListNode(&p[4]));
+
+    printf("%s\n", displayListHead->planet->name);
+
     int check = 0;
     PlanetDisplayList *temp = NULL;
     temp = displayListHead;
-
+    // check = MQwrite(&serverHandle, &p[0]);
+    // if(check != 0)
+    // {
+    //     printf("could not write to mailbox: %s\n", strerror(errno));
+    //     exit(EXIT_FAILURE);
+    // }
     if(temp == NULL)
     {
         printMsg("Error: No planets in list!\n");
@@ -469,13 +499,13 @@ void sendPlan()
 
     while(temp != NULL)
     {
-        if (temp->checked)
+        //TODO: ta bort kommentaren
+        if (/*temp->checked*/1)
         {
-          check = MQwrite(&serverHandle, &temp->planet);
-
+          check = MQwrite(&serverHandle, temp->planet);
           if(check != 0)
           {
-              printf("could not write to mailbox\n");
+              printf("could not write to mailbox: %s\n", strerror(errno));
               exit(EXIT_FAILURE);
           }
           activePlanets++;
@@ -492,7 +522,7 @@ void readDeadPlan()
 {
     planet_type tempP;
     int bytes_read;
-    if (!MQcreate(&mq, PLANETDEAD))
+    if (!MQcreate(&mq, returnName))
     {
         printf("Failed to create message queue!\n");
         return;
@@ -512,8 +542,8 @@ void readDeadPlan()
             }
             activePlanets--;
             //TODO: mutex stuff for remove from active planets
-            //TODO: remove planet from list
-            sleep(3);
+            displayListHead = removePlanet(displayListHead, tempP.name);
+            //sleep(3);
         }
     }
 
@@ -531,45 +561,46 @@ void updateList()
 //Lab2
 void * sendPlanet(void * arg)
 {
-    planet_type planet[6];
+    planet_type planet[5];
+    //planet[0] = createPlanet("p1", 300.0, 300.0, 0.0, 0.0, 10000000.0, 300000000, 1, 5);
+    //planet[1] = createPlanet("p2", 200.0, 300.0, 0.0, 0.0008, 1000.0, 100000000, 2, 5 );
     planet[0] = createPlanet("p1", 300.0, 300.0, 0.0, 0.0, 10000000.0, 300000000, arg, 5);
-    planet[1] = createPlanet("p2", 200.0, 300.0, 0.0, 0.0008, 1000.0, 100000000, arg, 5 );
+    planet[1] = createPlanet("p2", 200.0, 300.0, 0.0, 0.0008, 1000.0, 100000000, arg, 5);
     planet[2] = createPlanet("p3", 400.0, 300.0, 0.0, -0.0008, 1000.0, 1000000, arg, 5);
     planet[3] = createPlanet("p4", 300.0, 200.0, -0.0008, 0.0, 1000.0, 1000, arg, 5);
     planet[4] = createPlanet("p5", 300.0, 400.0, 0.0008, 0.0, 1000.0, 1000000, arg, 5);
-    planet[5] = createPlanet("p6", 300.0, 400.0, 0.9, 0.0, 1000.0, 1000000, arg, 5);
-
     int check = 0;
 
-    for(int i=0; i<6; i++)
+    sleep(2);
+
+    for(int i=0; i<5; i++)
     {
-
         check = MQwrite(&serverHandle, &planet[i]);
-        printf("written to mq\n");
-
         if(check != 0)
         {
             printf("could not write to mailbox\n");
             break;
         }
     }
+    //printf("planets sent\n");
     return NULL;
-
 }
 
 void * readDead(void * arg)
 {
+    mqd_t mq;
     int count = 0;
     planet_type tempP;
     int bytes_read;
-    //pthread_t block;
-    if (!MQcreate(&mq, PLANETDEAD))
+
+    if (!MQcreate(&mq, arg))
     {
         printf("Failed to create server!\n");
         return NULL;
     }
+    printf("created readDead!\n");
 
-    while(1)
+    while(count < 5)
     {
         bytes_read = MQread(&mq, &tempP);
         if(bytes_read != -1)
@@ -581,18 +612,9 @@ void * readDead(void * arg)
                 default: printf("Eeeeeeehhhhrror\n"); break;
             }
             count++;
-            sleep(20);
-            //pthread_create(&block, NULL, readDead/*Felfunktion*/, NULL);
-
         }
-        if(count == 5)
-        {
-            printf("I should break");
-        }
-
-
     }
-    if(MQclose(&mq, PLANETDEAD) == 1)
+    if(MQclose(&mq, arg) == 1)
     {
         printf("mailbox was successfully closed\n");
     }
@@ -600,26 +622,71 @@ void * readDead(void * arg)
 }
 
 
-    //pthread_t reader, writer;
 
-    /*int i;
-    pid_t pid;
-    pid = getpid();
-    char mqReturnName[30];
-    mqReturnName[0] = '/';
-    char car[20];
-    snprintf(car, 10, "%d", pid);
-    strcat(mqReturnName, car);
+// void * readDead(void * arg)
+// {
+//     int count = 0;
+//     planet_type tempP;
+//     int bytes_read;
+//     //pthread_t block;
+//     if (!MQcreate(&mq, PLANETDEAD))
+//     {
+//         printf("Failed to create server!\n");
+//         return NULL;
+//     }
+//
+//     while(1)
+//     {
+//         bytes_read = MQread(&mq, &tempP);
+//         if(bytes_read != -1)
+//         {
+//             switch(tempP.life)
+//             {
+//                 case  0: printf("Planet %s died of old age\n", tempP.name); break;
+//                 case -1: printf("Planet %s disappeared\n", tempP.name); break;
+//                 default: printf("Eeeeeeehhhhrror\n"); break;
+//             }
+//             count++;
+//             sleep(20);
+//             //pthread_create(&block, NULL, readDead/*Felfunktion*/, NULL);
+//
+//         }
+//         if(count == 5)
+//         {
+//             printf("I should break");
+//         }
+//
+//
+//     }
+//     if(MQclose(&mq, PLANETDEAD) == 1)
+//     {
+//         printf("mailbox was successfully closed\n");
+//     }
+//     return NULL;
+// }
 
-    //printf("%d = %s\n", (int)pid, mqReturnName);
 
-    if (MQconnect(&serverHandle, PLANETIPC) == 0)
-    {
-            printf("Failed to connect to server!\n");
-            return (EXIT_SUCCESS);
-    }
-    */
-    //printf("created server!\n");
-    //threadCreate(sendPlanet, writer, mqReturnName);
-    //threadCreate(readDead, reader, mqReturnName);
-    //pthread_exit(NULL);
+// pthread_t reader = 0;
+// pthread_t writer = 0;
+// pid_t pid;
+// pid = getpid();
+// char mqReturnName[30];
+// mqReturnName[0] = '/';
+// char car[20];
+// snprintf(car, 10, "%d", pid);
+// printf("%d = %s\n", (int)pid, mqReturnName);
+// strcat(mqReturnName, car);
+//
+//
+// if (MQconnect(&serverHandle, PLANETIPC) == 0)
+// {
+//     printf("Failed to connect to server!\n");
+//     return (EXIT_SUCCESS);
+// }
+// printf("mq connected\n");
+//
+// threadCreate(sendPlanet, writer, mqReturnName);
+// threadCreate(readDead, reader, mqReturnName);
+// pthread_exit(NULL);
+//
+// return (EXIT_SUCCESS);

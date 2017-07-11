@@ -26,6 +26,8 @@ int MQcreate (mqd_t * mq, char * name)
     attributes.mq_msgsize = MAXSIZE;
     attributes.mq_curmsgs = 0;
 
+
+
     *mq=mq_open(name, O_CREAT | O_RDWR, 0666, &attributes);
     if((mqd_t)-1 == *mq)
     {
@@ -34,8 +36,6 @@ int MQcreate (mqd_t * mq, char * name)
     }
     else
     {
-        printf("MQcreate succses\n");
-        fflush(stdout);
         return 1;
     }
 }
@@ -55,10 +55,7 @@ int MQconnect (mqd_t * mq, char * name)
 //returns: bytes read or -1
 int MQread (mqd_t * mq, void * refBuffer)
 {
-    printf("inMQread\n size = %lu\n", sizeof(*refBuffer));
-    fflush(stdout);
-
-    return mq_receive(*mq, refBuffer, 101, NULL);
+    return mq_receive(*mq, refBuffer, MAXSIZE+1, NULL);
 }
 //returns: 0 if ok and -1 if not ok
 int MQwrite (mqd_t *mq, void *sendBuffer)
@@ -71,10 +68,9 @@ int MQclose(mqd_t * mq, char * name)
     return (mq_close(*mq) != -1 && mq_unlink(name) != -1);
 }
 
-planet_type  createPlanet(char * name, double xpos, double ypos, double xV, double yV, double mass, int life, char * pid, int r)
+planet_type  createPlanet(char * name, double xpos, double ypos, double xV, double yV, double mass, int life, char *pid, int r)
 {
     planet_type  p;
-    //p.name = name;
     int i;
     for ( i = 0; name[i] != '\0'; i++)
     {
@@ -87,7 +83,6 @@ planet_type  createPlanet(char * name, double xpos, double ypos, double xV, doub
     p.vy = yV;
     p.mass = mass;
     p.life = life;
-
     for ( i = 0; pid[i] != '\0'; i++)
     {
         p.pid[i] = pid[i];
